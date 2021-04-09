@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <link rel="stylesheet" href="styles/app.css">
+</head>
+<body>
+  <div class="nav">
+    <div class="nav__item">
+      <div class="nav__logo"></div>
+    </div>
+    <div class="nav__item">
+      <div class="nav__doc-title">
+        Мой новый договор-new-lastversion.txt
+      </div>
+    </div>
+    <div class="nav__item">
+      <button type="button" class="btn btn--green">Сохранить</button>
+    </div>
+  </div>
+
+  <div class="wrapper ">
+    <div class="content">
+      <div class="step__1" id="app">
+        <button class="btn btn--primary mb-32" id="check-doc">Проверить документы</button>
+        <div class="subtitle">Мы поддерживаем документы в формете .txt</div>
+      </div>
+
+<!--      <div class="step__2 d-none">-->
+<!--        <div class="mb-32">-->
+<!--          <div class="loader"></div>-->
+<!--        </div>-->
+<!--        <div class="subtitle">Подождите документ обрабатывается</div>-->
+<!--      </div>-->
+
+      <div class="step__3 d-none">
+        <div class="title">Результат проверки документа</div>
+        <div class="subtitle file--name mb-42">“Мой новый договор-new-lastversion.txt”</div>
+        <div class="result-container">
+          <div class="box">
+            <div class="box__title error">
+              <span class="amount">6</span> валидных разделов
+            </div>
+            <div class="box__list">
+              <div class="box__list__item">Наименование документа</div>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box__title valid">
+              <span class="amount">6</span> валидных разделов
+            </div>
+            <div class="box__list">
+              <div class="box__list__item">Наименование документа</div>
+            </div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-center">
+          <button type="button" class="btn btn--primary">Показать структуру</button>
+        </div>
+      </div>
+
+      <div class="step__4 d-none">
+        <div class="result-container">
+          <div class="box error">
+            <div class="box__title">
+              <span class="amount">6</span> Отсутствуют
+            </div>
+            <div class="box__list">
+              <div class="box__list__item">Наименование документа</div>
+              <div class="box__list__item">Перечень действий с персональными данными</div>
+              <div class="box__list__item"> Срок, в течении которого действует согласие</div>
+              <div class="box__list__item"> Срок, в течении которого действует согласие</div>
+              <div class="box__list__item"> Срок, в течении которого действует согласие</div>
+              <div class="box__list__item"> Срок, в течении которого действует согласие</div>
+              <div class="box__list__item"> Срок, в течении которого действует согласие</div>
+              <div class="box__list__item"> Срок, в течении которого действует согласие</div>
+              <div class="box__list__item"> Срок, в течении которого действует согласие</div>
+            </div>
+          </div>
+          <div class="doc__view">
+
+          </div>
+          <div class="box valid">
+            <div class="box__title">
+              <span class="amount">6</span> Присутствуют
+            </div>
+            <div class="box__list">
+              <div class="box__list__item">Наименование документа</div>
+              <div class="box__list__item">Перечень действий с персональными данными</div>
+              <div class="box__list__item"> Срок, в течении которого действует согласие</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="js/main.js"></script>
+</body>
+</html>
