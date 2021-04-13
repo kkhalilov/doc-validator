@@ -25,6 +25,45 @@ body {
   }
 }
 
+//paste
+.paste {
+  position: relative;
+}
+.paste {
+  position: relative;
+  .inner {
+    position: absolute;
+    width: fit-content;
+    background: #FF2E86;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    padding: 1px 16px;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 18px;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    &:before {
+      content: "";
+      position: absolute;
+      display: block;
+      width: 0;
+      left: 50%;
+      margin-top: -1px;
+      bottom: 0;
+      border: 5px solid transparent;
+      border-bottom: 0;
+      border-top: 5px solid #FF2E86;
+      transform: translate(-50%, 100%);
+    }
+  }
+}
+//highlight
+.highlight {
+  background-color: #5cde98;
+}
 //titles
 .title {
   font-family: $font-family-base;
@@ -48,7 +87,7 @@ body {
   min-height: calc(100vh - (64px + 40px));
 
   .content {
-    width: 1200px;
+    max-width: 1280px;
     min-height: 100%;
     height: auto;
     margin: 0 auto;
@@ -65,6 +104,7 @@ body {
 }
 
 .nav {
+  z-index: 10;
   position: fixed;
   top: 0;
   left: 0;
@@ -148,11 +188,13 @@ body {
 .step__4 {
   padding-top: 32px;
   .result-container {
+    padding: 0 16px;
     display: grid;
     grid-template-columns: 206px 1fr 206px;
     grid-template-rows: auto auto auto;
     grid-column-gap: 50px;
     .doc__view {
+      padding: 32px;
       background: #fff;
       box-shadow: 0px 0px 16px rgba(0, 0, 0, 0.25);
       border-radius: 16px;
@@ -191,7 +233,7 @@ body {
             background-color: #FF2E86;
             border-color: #FF2E86;
           }
-          &:hover {
+          &.active {
             background-color: #FF2E86;
             color: #fff;
             &:before {
@@ -212,7 +254,7 @@ body {
             background-color: #00CB5D;
             border-color: #00CB5D;
           }
-          &:hover {
+          &.active {
             background-color: #00CB5D;
             color: #fff;
             &:before {
@@ -232,7 +274,7 @@ body {
           &:before {
             position: absolute;
             left: 8px;
-            top: 9px;
+            top: 8px;
             width: 8px;
             height: 8px;
             border-style: solid;
