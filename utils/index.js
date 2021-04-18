@@ -59,6 +59,6 @@ function setDocItemIndices(itemData) {
     return `highlight-indices="${highlightIndices}"`;
   } else {
       // const indexId = Math.floor(Math.random() * 100);
-      return `set-content-index="${itemData.index}"`;
+      return `component-name=${itemData.component_name} set-content-index="${itemData.index}"`;
   }
 }
