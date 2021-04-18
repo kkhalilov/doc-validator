@@ -1,6 +1,7 @@
-import {parseComponentsList} from '../utils/index.js';
+import {parseComponentsList, resetAttributes} from '../utils/index.js';
 
-window.onload = () => onInit();
+window.onload = () => onInit()
+
 
 function onInit() {
   window.app = document.getElementById('app');
@@ -20,10 +21,10 @@ function uploadDoc() {
   fetch('./data.json')
     .then(response => response.json())
     .then(data => {
-      const docResp = JSON.stringify(data)
-      localStorage.setItem('data', docResp)
+      window.initialDocData = data;
+      localStorage.setItem('data', JSON.stringify(data))
     })
-    .then(onInitResults)
+    .then(onInitResults);
 }
 
 function onInitResults() {
@@ -33,8 +34,7 @@ function onInitResults() {
 
   app.classList.add('step__3');
 
-  const data = localStorage.getItem('data');
-  const docData = JSON.parse(data);
+  const docData = window.initialDocData;
 
   window.foundComponentsList = docData.found_components.map(item => {
     const descriptionText = docData.description[item.component_name];
@@ -74,19 +74,17 @@ function onInitResults() {
   `);
 
   const showStructureBtn = document.getElementById('show-structure');
+
   showStructureBtn.addEventListener('click', showStructure)
 
 }
 
 function showStructure() {
+  const docData = window.initialDocData;
+
   app.innerHTML = '';
   app.className = '';
-
   app.classList.add('step__4');
-
-  const data = localStorage.getItem('data');
-  const docData = JSON.parse(data);
-
   app.insertAdjacentHTML('afterbegin', `
       <div class="result-container">
         <div class="box error">
@@ -98,9 +96,7 @@ function showStructure() {
           </div>
         </div>
         <div class="doc__view">
-          <div id="doc-data">
-            ${docData.text}
-          </div>
+          <div id="doc-data">${docData.text}</div>
         </div>
         <div class="box valid" id="box-valid">
           <div class="box__title">
@@ -111,18 +107,27 @@ function showStructure() {
           </div>
         </div>
       </div>
-  `)
+  `);
 
   const docDataContainer = document.getElementById('doc-data');
   const validOptions = document.querySelectorAll('.box.valid .box__list__item');
   const errorOptions = document.querySelectorAll('.box.error .box__list__item');
 
-  validOptions.forEach(function(item) {
-    const highlightIndices = item.getAttribute('highlight-indices').split(',');
-    let highlightedData = {}
 
+  //гетим выделенный фрагмент текста
+  // docDataContainer.addEventListener('mouseup', event => {
+  //   if (window.getSelection().toString().length) {
+  //     let exactText = window.getSelection().toString();
+  //     console.log('!!!!text', exactText)
+  //     console.log('x', event.clientX)
+  //     console.log('y', event.clientY)
+  //   }
+  // });
+
+  validOptions.forEach(function(item) {
     item.addEventListener('mouseover', () => {
-      let docDataText = docData.text;
+      const highlightIndices = item.getAttribute('highlight-indices').split(',');
+      let docDataText = window.initialDocData.text;
 
       [...document.querySelectorAll('svg.leader-line')].forEach(item => {
         item.remove();
@@ -135,33 +140,49 @@ function showStructure() {
       item.classList.add('active');
 
       highlightIndices.forEach(indices => {
-        const startIndex = indices.split('/')[0];
-        const stopIndex = indices.split('/')[1];
+        const startIndex = +indices.split('/')[0];
+        const stopIndex = +indices.split('/')[1];
 
-        docDataText = docDataText.substring(0, startIndex)  + "<span class='highlight'>" + docDataText.substring(startIndex, stopIndex)  + "</span>" + docDataText.substring(stopIndex, docDataText.length);
-      })
+        docDataText =
+          docDataText.substring(0, startIndex)  +
+          '<span class="highlight">' +
+            docDataText.substring(startIndex, stopIndex)  +
+          '</span>' +
+          docDataText.substring(stopIndex, docDataText.length);
+      });
 
       docDataContainer.innerHTML = docDataText;
 
       highlightIndices.forEach((indices, index) => {
-        new LeaderLine(
-          item,
-          document.querySelectorAll('.highlight')[index],
-          {path: 'grid', color: '#00CB5D', startPlug: 'disc', endPlug: 'arrow1', startSocket: 'left', endSocket: 'right'}
-        );
+        const start = item;
+        const end = document.querySelectorAll('.highlight')[index];
+
+        if (start !== undefined && end !== null) {
+          // item.arrow = new LeaderLine(
+          //   start, end,
+          //   {
+          //     path: 'grid',
+          //     color: '#00CB5D',
+          //     startPlug: 'behind',
+          //     endPlug: 'disc',
+          //     startSocket: 'left',
+          //     endSocket: 'right'
+          //   }
+          // );
+        }
       })
 
     });
 
-    item.addEventListener('mouseleave', event => {
-    })
-
-  })
+    item.addEventListener('mouseleave', event => {});
+  });
 
   errorOptions.forEach(function(item) {
-    const setContentIndex = item.getAttribute('set-content-index').split(',');
-
     item.addEventListener('mouseover', () => {
+      const setContentIndex = +item.getAttribute('set-content-index');
+
+      if (item.getAttribute('disabled')) return
+
       let docDataText = docData.text;
 
       [...document.querySelectorAll('svg.leader-line')].forEach(item => {
@@ -174,23 +195,51 @@ function showStructure() {
 
       item.classList.add('active');
 
-
-      docDataText = docDataText.substring(0, setContentIndex)  + "<span class='paste'><div class='inner'>Вставть</div></span>" + docDataText.substring(setContentIndex, docDataText.length);
+      docDataText =
+        window.initialDocData.text.substring(0, setContentIndex) +
+        '<div id="btn-paste-content" class="btn-paste-content">' +
+          '<div class="inner">Вставть</div>' +
+        '</div>' +
+        window.initialDocData.text.substring(setContentIndex, window.initialDocData.text.length);
 
       docDataContainer.innerHTML = docDataText;
 
-      new LeaderLine(
-        item,
-        document.querySelector('.paste'),
-        {path: 'grid', color: '#FF2E86', startPlug: 'disc', endPlug: 'arrow1', startSocket: 'right', endSocket: 'left'}
-      );
+      const actionBtn = document.getElementById('btn-paste-content');
 
+      actionBtn.addEventListener('click', (e) => {
+        const componentName = item.getAttribute('component-name');
+        const index = +item.getAttribute('set-content-index');
+        const pasteData = docData.unfound_components.find((component) => component.component_name === componentName);
+
+        index === 0
+          ? pasteData.text = pasteData.text + '\n'
+          : pasteData.text = '\n' + pasteData.text + '\n';
+
+        window.initialDocData.text =
+          window.initialDocData.text.substring(0, setContentIndex) +
+          `${pasteData.text}` +
+          window.initialDocData.text.substring(setContentIndex, window.initialDocData.text.length);
+
+        docDataContainer.innerHTML = window.initialDocData.text;
+        item.setAttribute('disabled', 'true');
+        resetAttributes(index, pasteData.text.length)
+      })
+
+      if (item !== null && actionBtn !== null) {
+        // item.arrow = new LeaderLine(
+        //   item, actionBtn,
+        //   {
+        //     path: 'grid',
+        //     color: '#FF2E86',
+        //     startPlug: 'behind',
+        //     endPlug: 'disc',
+        //     startSocket: 'right',
+        //     endSocket: 'left'
+        //   }
+        // );
+      }
     });
 
-    item.addEventListener('mouseleave', event => {
-    })
-
-  })
-
-
+    item.addEventListener('mouseleave', event => {});
+  });
 }
