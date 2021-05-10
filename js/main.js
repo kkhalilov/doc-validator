@@ -1,19 +1,24 @@
-import {parseComponentsList, resetAttributes} from '../utils/index.js';
+import {
+  parseComponentsList,
+  resetAttributes,
+  wrapValidTextComponents,
+  scrollToEl
+} from '../utils/index.js';
 
-window.onload = () => onInit()
+let common = {};
 
+window.onload = () => onInit();
 
 function onInit() {
-  window.app = document.getElementById('app');
+  common.app = document.getElementById('app');
   const uploadDocBtn = document.getElementById('check-doc');
 
   uploadDocBtn.addEventListener('click', uploadDoc);
 }
 
-
 function uploadDoc() {
-  app.innerHTML = '';
-  app.insertAdjacentHTML('afterbegin', `
+  common.app.innerHTML = '';
+  common.app.insertAdjacentHTML('afterbegin', `
     <div class="mb-32"><div class="loader"></div></div>
     <div class="subtitle">Подождите документ обрабатывается</div>
   `);
@@ -21,50 +26,46 @@ function uploadDoc() {
   fetch('./data.json')
     .then(response => response.json())
     .then(data => {
-      window.initialDocData = data;
+      common.initialDocData = data;
       localStorage.setItem('data', JSON.stringify(data))
     })
     .then(onInitResults);
 }
 
 function onInitResults() {
-  app.innerHTML = '';
-  app.className = '';
-  console.log(app);
+  common.app.innerHTML = '';
+  common.app.className = '';
+  common.app.classList.add('step__3');
 
-  app.classList.add('step__3');
+  const docData = common.initialDocData;
 
-  const docData = window.initialDocData;
-
-  window.foundComponentsList = docData.found_components.map(item => {
+  common.foundComponentsList = docData.found_components.map(item => {
     const descriptionText = docData.description[item.component_name];
-
     return {descriptionText, ...item};
   })
-  window.unfoundComponentsList = docData.unfound_components.map(item => {
+  common.unfoundComponentsList = docData.unfound_components.map(item => {
     const descriptionText = docData.description[item.component_name];
-
     return {descriptionText, ...item};
   })
 
-  app.insertAdjacentHTML('afterbegin', `
+  common.app.insertAdjacentHTML('afterbegin', `
     <div class="title">Результат проверки документа</div>
       <div class="subtitle file--name mb-42">“Мой новый договор-new-lastversion.txt”</div>
       <div class="result-container">
         <div class="box">
           <div class="box__title error">
-            <span class="amount">${window.unfoundComponentsList.length}</span> раздела отсутствуют
+            <span class="amount">${common.unfoundComponentsList.length}</span> раздела отсутствуют
           </div>
           <div class="box__list">
-            ${parseComponentsList(window.unfoundComponentsList)}
+            ${parseComponentsList(common.unfoundComponentsList)}
           </div>
         </div>
         <div class="box">
           <div class="box__title valid">
-            <span class="amount">${window.foundComponentsList.length}</span> валидных разделов
+            <span class="amount">${common.foundComponentsList.length}</span> валидных разделов
           </div>
           <div class="box__list">
-            ${parseComponentsList(window.foundComponentsList)}
+            ${parseComponentsList(common.foundComponentsList)}
           </div>
         </div>
       </div>
@@ -74,172 +75,185 @@ function onInitResults() {
   `);
 
   const showStructureBtn = document.getElementById('show-structure');
-
-  showStructureBtn.addEventListener('click', showStructure)
-
+  showStructureBtn.addEventListener('click', showStructure);
 }
 
 function showStructure() {
-  const docData = window.initialDocData;
+  window.scrollTo(0, 0);
 
-  app.innerHTML = '';
-  app.className = '';
-  app.classList.add('step__4');
-  app.insertAdjacentHTML('afterbegin', `
+  const initialDocData = common.initialDocData;
+
+  common.app.innerHTML = '';
+  common.app.className = '';
+  common.app.classList.add('step__4');
+  common.app.insertAdjacentHTML('afterbegin', `
       <div class="result-container">
-        <div class="box error">
+        <div class="box error" data-simplebar data-simplebar-auto-hide="false">
           <div class="box__title">
-            <span class="amount">${window.unfoundComponentsList.length}</span> Отсутствуют
+            <span class="amount">${common.unfoundComponentsList.length}</span> Отсутствуют
           </div>
           <div class="box__list">
-            ${parseComponentsList(window.unfoundComponentsList)}
+            ${parseComponentsList(common.unfoundComponentsList)}
           </div>
         </div>
-        <div class="doc__view">
-          <div id="doc-data">${docData.text}</div>
+        <div class="doc__view" data-simplebar data-simplebar-auto-hide="false">
+          <div id="doc-data">${initialDocData.text}</div>
         </div>
-        <div class="box valid" id="box-valid">
+        <div class="box valid" data-simplebar data-simplebar-auto-hide="false" id="box-valid">
           <div class="box__title">
-            <span class="amount">${window.foundComponentsList.length}</span> Присутствуют
+            <span class="amount">${common.foundComponentsList.length}</span> Присутствуют
           </div>
           <div class="box__list">
-            ${parseComponentsList(window.foundComponentsList)}
+            ${parseComponentsList(common.foundComponentsList)}
           </div>
         </div>
       </div>
   `);
 
-  const docDataContainer = document.getElementById('doc-data');
+  const docView = document.querySelector('.doc__view');
+  const docData = document.getElementById('doc-data');
   const validOptions = document.querySelectorAll('.box.valid .box__list__item');
   const errorOptions = document.querySelectorAll('.box.error .box__list__item');
+  const modal = document.getElementById('modal');
+  const modalInput = document.getElementById('name-of-component');
 
+  //оборачиваем все валидные текстовые объекты
+  wrapValidTextComponents(validOptions, errorOptions, common.initialDocData.text);
+  common.wrappedData = docData.innerHTML;
 
   //гетим выделенный фрагмент текста
-  // docDataContainer.addEventListener('mouseup', event => {
-  //   if (window.getSelection().toString().length) {
-  //     let exactText = window.getSelection().toString();
-  //     console.log('!!!!text', exactText)
-  //     console.log('x', event.clientX)
-  //     console.log('y', event.clientY)
+  // docData.addEventListener('mouseup', e => {
+  //   setTimeout(() => {
+  //     if (window.getSelection().toString().length) {
+  //       let scrollTop = document.documentElement.scrollTop;
+  //       modal.style.display = 'flex';
+  //       modal.style.left = `${e.clientX}px`;
+  //       modal.style.top = `${e.clientY + scrollTop}px`;
+  //       let exactText = window.getSelection().toString();
+  //       console.log('!!!!text', exactText);
+  //
+  //     }
+  //   }, 10);
+  // });
+  // document.documentElement.addEventListener('mousedown', (e) => {
+  //   if (e.target.closest('#modal')) {
+  //     return;
   //   }
+  //
+  //   modal.style.display = 'none';
   // });
 
-  validOptions.forEach(function(item) {
-    item.addEventListener('mouseover', () => {
-      const highlightIndices = item.getAttribute('highlight-indices').split(',');
-      let docDataText = window.initialDocData.text;
+  validOptions.forEach(function(validOption, idx) {
+    let timeout;
+    const delay = 100;
 
-      [...document.querySelectorAll('svg.leader-line')].forEach(item => {
-        item.remove();
-      });
+    validOption.addEventListener('mouseover', () => {
+      timeout = setTimeout(() => {
+        //очищаем от кнопки вставить в случае если она есть
+        docData.innerHTML = common.wrappedData;
 
-      [...document.querySelectorAll('.box.valid  .box__list__item, .box.error  .box__list__item')].forEach(item => {
-        item.classList.remove('active');
-      });
+        const componentName = validOption.getAttribute('name');
 
-      item.classList.add('active');
+        //удаляем все стрелки и остается одно (лютый костыль)
+        // [...document.querySelectorAll('svg.leader-line')].forEach(item => {
+        //   item.remove();
+        // });
 
-      highlightIndices.forEach(indices => {
-        const startIndex = +indices.split('/')[0];
-        const stopIndex = +indices.split('/')[1];
+        [...validOptions, ...errorOptions].forEach(item => {
+          item.classList.remove('active');
+        });
 
-        docDataText =
-          docDataText.substring(0, startIndex)  +
-          '<span class="highlight">' +
-            docDataText.substring(startIndex, stopIndex)  +
-          '</span>' +
-          docDataText.substring(stopIndex, docDataText.length);
-      });
+        validOption.classList.add('active');
 
-      docDataContainer.innerHTML = docDataText;
+        //скролим к нужному элементу
+        scrollToEl(
+          docView,
+          docView.querySelector(`.highlight[name="${componentName}"]`),
+          20
+        );
 
-      highlightIndices.forEach((indices, index) => {
-        const start = item;
-        const end = document.querySelectorAll('.highlight')[index];
-
-        if (start !== undefined && end !== null) {
-          // item.arrow = new LeaderLine(
-          //   start, end,
-          //   {
-          //     path: 'grid',
-          //     color: '#00CB5D',
-          //     startPlug: 'behind',
-          //     endPlug: 'disc',
-          //     startSocket: 'left',
-          //     endSocket: 'right'
-          //   }
-          // );
-        }
-      })
-
+      }, delay)
     });
 
-    item.addEventListener('mouseleave', event => {});
+    validOption.addEventListener('mouseleave', () => {
+      clearTimeout(timeout);
+    });
   });
 
-  errorOptions.forEach(function(item) {
-    item.addEventListener('mouseover', () => {
-      const setContentIndex = +item.getAttribute('set-content-index');
+  errorOptions.forEach(function(errorOption) {
+    let timeout;
+    const delay = 100;
 
-      if (item.getAttribute('disabled')) return
+    errorOption.addEventListener('mouseover', () => {
+      timeout = setTimeout(() => {
+        //сетим глобально обернутые куски текста
+        let docDataWrapped = docData.innerHTML;
+        const setContentIndex = +errorOption.getAttribute('set-content-index');
 
-      let docDataText = docData.text;
+        if (errorOption.getAttribute('disabled')) return
 
-      [...document.querySelectorAll('svg.leader-line')].forEach(item => {
-        item.remove();
-      });
+        // [...document.querySelectorAll('svg.leader-line')].forEach(item => {
+        //   item.remove();
+        // });
 
-      [...document.querySelectorAll('.box.error  .box__list__item, .box.valid .box__list__item')].forEach(item => {
-        item.classList.remove('active');
-      });
+        [...validOptions, ...errorOptions].forEach(item => {
+          item.classList.remove('active');
+        });
 
-      item.classList.add('active');
+        errorOption.classList.add('active');
 
-      docDataText =
-        window.initialDocData.text.substring(0, setContentIndex) +
-        '<div id="btn-paste-content" class="btn-paste-content">' +
-          '<div class="inner">Вставть</div>' +
-        '</div>' +
-        window.initialDocData.text.substring(setContentIndex, window.initialDocData.text.length);
+        docDataWrapped =
+          common.wrappedData.substring(0, setContentIndex) +
+          '<div id="btn-paste-content" class="btn-paste-content">' +
+            '<div class="inner">Вставть</div>' +
+          '</div>' +
+          common.wrappedData.substring(setContentIndex, common.wrappedData.length);
 
-      docDataContainer.innerHTML = docDataText;
+        docData.innerHTML = docDataWrapped;
 
-      const actionBtn = document.getElementById('btn-paste-content');
+        const pasteBtn = docView.querySelector('#btn-paste-content');
 
-      actionBtn.addEventListener('click', (e) => {
-        const componentName = item.getAttribute('component-name');
-        const index = +item.getAttribute('set-content-index');
-        const pasteData = docData.unfound_components.find((component) => component.component_name === componentName);
+        //чтобы скролить к контенту в случае с overflow scroll
+        scrollToEl(docView, pasteBtn, 90);
 
-        index === 0
-          ? pasteData.text = pasteData.text + '\n'
-          : pasteData.text = '\n' + pasteData.text + '\n';
+        pasteBtn.addEventListener('click', () => {
+          const componentName = errorOption.getAttribute('name');
+          const index = +errorOption.getAttribute('set-content-index');
+          const pasteData = initialDocData.unfound_components
+            .find((component) => component.component_name === componentName);
 
-        window.initialDocData.text =
-          window.initialDocData.text.substring(0, setContentIndex) +
-          `${pasteData.text}` +
-          window.initialDocData.text.substring(setContentIndex, window.initialDocData.text.length);
+          index === 0
+            ? pasteData.text = pasteData.text + '\n'
+            : pasteData.text = '\n' + pasteData.text + '\n';
 
-        docDataContainer.innerHTML = window.initialDocData.text;
-        item.setAttribute('disabled', 'true');
-        resetAttributes(index, pasteData.text.length)
-      })
+          common.wrappedData =
+            common.wrappedData.substring(0, setContentIndex) +
+            `${pasteData.text}` +
+            common.wrappedData.substring(setContentIndex, common.wrappedData.length);
+          docData.innerHTML = common.wrappedData;
 
-      if (item !== null && actionBtn !== null) {
-        // item.arrow = new LeaderLine(
-        //   item, actionBtn,
-        //   {
-        //     path: 'grid',
-        //     color: '#FF2E86',
-        //     startPlug: 'behind',
-        //     endPlug: 'disc',
-        //     startSocket: 'right',
-        //     endSocket: 'left'
-        //   }
-        // );
-      }
+          errorOption.setAttribute('disabled', 'true');
+          resetAttributes(index, pasteData.text.length);
+        });
+
+        // if (errorOption !== null) {
+        //   errorOption.arrow = new LeaderLine(
+        //     errorOption, pasteBtn,
+        //     {
+        //       path: 'grid',
+        //       color: '#FF2E86',
+        //       startPlug: 'behind',
+        //       endPlug: 'disc',
+        //       startSocket: 'right',
+        //       endSocket: 'left'
+        //     }
+        //   );
+        // }
+      }, delay);
     });
 
-    item.addEventListener('mouseleave', event => {});
+    errorOption.addEventListener('mouseleave', () => {
+      clearTimeout(timeout);
+    });
   });
 }

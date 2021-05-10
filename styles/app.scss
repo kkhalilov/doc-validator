@@ -1,6 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
 $font-family-base: 'PT Sans', sans-serif;
+$nav-height: 64px;
+//$content-pb: 40px;
+$content-pb: 20px;
 
 @import 'shortcodes';
 @import 'buttons';
