@@ -2,7 +2,8 @@ import {
   parseComponentsList,
   resetAttributes,
   wrapValidTextComponents,
-  scrollToEl
+  scrollToEl,
+  addValidPlugLines
 } from '../utils/index.js';
 
 let common = {};
@@ -147,7 +148,7 @@ function showStructure() {
     let timeout;
     const delay = 100;
 
-    validOption.addEventListener('mouseover', () => {
+    validOption.addEventListener('click', () => {
       timeout = setTimeout(() => {
         //очищаем от кнопки вставить в случае если она есть
         docData.innerHTML = common.wrappedData;
@@ -172,6 +173,8 @@ function showStructure() {
           20
         );
 
+        addValidPlugLines(validOption, componentName);
+
       }, delay)
     });
 
@@ -184,7 +187,7 @@ function showStructure() {
     let timeout;
     const delay = 100;
 
-    errorOption.addEventListener('mouseover', () => {
+    errorOption.addEventListener('click', () => {
       timeout = setTimeout(() => {
         //сетим глобально обернутые куски текста
         let docDataWrapped = docData.innerHTML;

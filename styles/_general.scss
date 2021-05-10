@@ -53,6 +53,10 @@ body {
   }
 }
 
+.leader-line {
+  position: fixed !important;
+}
+
 //modal dialog
 .modal {
   display: none;
@@ -240,11 +244,6 @@ body {
   min-height: calc(100vh - (#{$nav-height} + #{$content-pb}));
 }
 
-.step__4 {
-  height: calc(100vh - #{$nav-height});
-  min-height: calc(100vh - #{$nav-height});
-}
-
 .step__1 {
   display: flex;
   justify-content: center;
@@ -294,6 +293,8 @@ body {
 .step__4 {
   //padding-top: 32px;
   padding-top: 20px;
+  height: calc(100vh - #{$nav-height});
+  min-height: calc(100vh - #{$nav-height});
   .result-container {
     height: 100%;
     padding: 0 16px;

@@ -46,28 +46,48 @@ export function resetAttributes(index, shiftValue) {
     }
   });
 }
+window.lines = {};
 
-export function addValidPlugLines(start, componentName) {
-  const docElements = [...document.querySelectorAll(`#doc-data [name="${componentName}"]`)];
+export function addValidPlugLines(start, name) {
+  const docElements = [...document.querySelectorAll(`#doc-data .highlight[name="${name}"]`)];
+  Object.values(lines).map(value => {
+    value.remove();
+  })
+
+  window.lines = {}
 
   docElements.forEach((docElement, idx) => {
-    let line = new LeaderLine(
+
+    lines[name + idx] = new LeaderLine(
       start, docElement,
       {
         path: 'grid',
         color: '#00CB5D',
         startPlug: 'behind',
-        endPlug: 'disc',
+        endPlug: 'arrow3',
         startSocket: 'left',
         endSocket: 'right',
         positionByWindowResize: false
       }
     );
 
-    //let doc = document.querySelector('.doc__view')
-    // doc.addEventListener('scroll', AnimEvent.add(function() {
-    //   line.position();
-    // }), false);
+    setTimeout(() => {
+      let wrapper = document.querySelector('.box.valid .simplebar-content-wrapper');
+      wrapper.onscroll = () => {
+        Object.values(lines).map(value => {
+          value.position();
+        })
+      }
+    }, 500);
+
+    setTimeout(() => {
+      let wrapper = document.querySelector('.doc__view .simplebar-content-wrapper');
+      wrapper.onscroll = () => {
+        Object.values(lines).map(value => {
+          value.position();
+        })
+      }
+    }, 500);
   });
 }
 
@@ -135,7 +155,7 @@ export function scrollToEl(container, el, topIndent) {
   container.querySelector('.simplebar-content-wrapper')
     .scrollTo(
       {
-        top: el.offsetTop - topIndent, behavior: "smooth"
+        top: el.offsetTop - topIndent, behavior: "auto"
       }
     );
 }

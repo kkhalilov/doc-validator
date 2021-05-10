@@ -102,6 +102,10 @@ body {
     transform: rotate(360deg);
   }
 }
+.leader-line {
+  position: fixed !important;
+}
+
 .modal {
   display: none;
   max-width: 250px;
@@ -268,11 +272,6 @@ body {
   min-height: calc(100vh - (64px + 20px));
 }
 
-.step__4 {
-  height: calc(100vh - 64px);
-  min-height: calc(100vh - 64px);
-}
-
 .step__1 {
   display: flex;
   justify-content: center;
@@ -319,6 +318,8 @@ body {
 
 .step__4 {
   padding-top: 20px;
+  height: calc(100vh - 64px);
+  min-height: calc(100vh - 64px);
 }
 .step__4 .result-container {
   height: 100%;
