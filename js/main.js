@@ -3,7 +3,8 @@ import {
   resetAttributes,
   wrapValidTextComponents,
   scrollToEl,
-  addValidPlugLines
+  addLeaderLineToEl,
+  destroyLeaderLines,
 } from '../utils/index.js';
 
 let common = {};
@@ -98,11 +99,20 @@ function showStructure() {
           </div>
         </div>
         <div class="doc__view" data-simplebar data-simplebar-auto-hide="false">
-          <div id="doc-data">${initialDocData.text}</div>
+          <div class="doc__data" id="doc-data">${initialDocData.text}</div>
         </div>
         <div class="box valid" data-simplebar data-simplebar-auto-hide="false" id="box-valid">
           <div class="box__title">
-            <span class="amount">${common.foundComponentsList.length}</span> Присутствуют
+            <div class="">
+              <span class="amount">${common.foundComponentsList.length}</span> Присутствуют
+            </div>
+            <div class="">
+              <div class="slider-checkbox">
+                <input type="checkbox" id="view-trigger" name="view-trigger">
+                <label for="view-trigger"></label>
+              </div>
+            </div>
+            
           </div>
           <div class="box__list">
             ${parseComponentsList(common.foundComponentsList)}
@@ -115,6 +125,8 @@ function showStructure() {
   const docData = document.getElementById('doc-data');
   const validOptions = document.querySelectorAll('.box.valid .box__list__item');
   const errorOptions = document.querySelectorAll('.box.error .box__list__item');
+  const viewTrigger = document.getElementById('view-trigger');
+
   const modal = document.getElementById('modal');
   const modalInput = document.getElementById('name-of-component');
 
@@ -144,119 +156,106 @@ function showStructure() {
   //   modal.style.display = 'none';
   // });
 
+  viewTrigger.addEventListener('change', () => {
+    console.log('click');
+    docView.classList.toggle('highlighted');
+
+  })
+
   validOptions.forEach(function(validOption, idx) {
-    let timeout;
-    const delay = 100;
+    // let timeout;
+    // const delay = 100;
 
     validOption.addEventListener('click', () => {
-      timeout = setTimeout(() => {
-        //очищаем от кнопки вставить в случае если она есть
-        docData.innerHTML = common.wrappedData;
+      destroyLeaderLines();
 
-        const componentName = validOption.getAttribute('name');
+      //очищаем от кнопки вставить в случае если она есть
+      docData.innerHTML = common.wrappedData;
 
-        //удаляем все стрелки и остается одно (лютый костыль)
-        // [...document.querySelectorAll('svg.leader-line')].forEach(item => {
-        //   item.remove();
-        // });
+      const componentName = validOption.getAttribute('name');
 
-        [...validOptions, ...errorOptions].forEach(item => {
-          item.classList.remove('active');
-        });
+      [...validOptions, ...errorOptions].forEach(item => {
+        item.classList.remove('active');
+      });
 
-        validOption.classList.add('active');
+      validOption.classList.add('active');
 
-        //скролим к нужному элементу
-        scrollToEl(
-          docView,
-          docView.querySelector(`.highlight[name="${componentName}"]`),
-          20
-        );
+      //скролим к нужному элементу
+      scrollToEl(
+        docView,
+        docView.querySelector(`.highlight[name="${componentName}"]`),
+        20
+      );
 
-        addValidPlugLines(validOption, componentName);
+      addLeaderLineToEl(validOption, componentName, false);
 
-      }, delay)
     });
 
     validOption.addEventListener('mouseleave', () => {
-      clearTimeout(timeout);
+      // clearTimeout(timeout);
     });
   });
 
   errorOptions.forEach(function(errorOption) {
-    let timeout;
-    const delay = 100;
+    // let timeout;
+    // const delay = 100;
 
     errorOption.addEventListener('click', () => {
-      timeout = setTimeout(() => {
-        //сетим глобально обернутые куски текста
-        let docDataWrapped = docData.innerHTML;
-        const setContentIndex = +errorOption.getAttribute('set-content-index');
+      destroyLeaderLines();
+      //сетим глобально обернутые куски текста
+      let docDataWrapped = docData.innerHTML;
+      const setContentIndex = +errorOption.getAttribute('set-content-index');
 
-        if (errorOption.getAttribute('disabled')) return
+      if (errorOption.getAttribute('disabled')) return;
 
-        // [...document.querySelectorAll('svg.leader-line')].forEach(item => {
-        //   item.remove();
-        // });
+      [...validOptions, ...errorOptions].forEach(item => {
+        item.classList.remove('active');
+      });
 
-        [...validOptions, ...errorOptions].forEach(item => {
-          item.classList.remove('active');
-        });
+      errorOption.classList.add('active');
 
-        errorOption.classList.add('active');
+      docDataWrapped =
+        common.wrappedData.substring(0, setContentIndex) +
+        '<div id="btn-paste-content" class="btn-paste-content">' +
+          '<div class="inner">Вставть</div>' +
+        '</div>' +
+        common.wrappedData.substring(setContentIndex, common.wrappedData.length);
 
-        docDataWrapped =
+      docData.innerHTML = docDataWrapped;
+
+      const btnPasteMissingOption = docView.querySelector('#btn-paste-content');
+
+      //чтобы скролить к контенту в случае с overflow scroll
+      scrollToEl(docView, btnPasteMissingOption, 90);
+
+      addLeaderLineToEl(errorOption, '', true);
+
+      btnPasteMissingOption.addEventListener('click', () => {
+        destroyLeaderLines();
+
+        const componentName = errorOption.getAttribute('name');
+        const index = +errorOption.getAttribute('set-content-index');
+        const pasteData = initialDocData.unfound_components
+          .find((component) => component.component_name === componentName);
+
+        index === 0
+          ? pasteData.text = pasteData.text + '\n'
+          : pasteData.text = '\n' + pasteData.text + '\n';
+
+
+        common.wrappedData =
           common.wrappedData.substring(0, setContentIndex) +
-          '<div id="btn-paste-content" class="btn-paste-content">' +
-            '<div class="inner">Вставть</div>' +
-          '</div>' +
+          `${pasteData.text}` +
           common.wrappedData.substring(setContentIndex, common.wrappedData.length);
+        docData.innerHTML = common.wrappedData;
 
-        docData.innerHTML = docDataWrapped;
-
-        const pasteBtn = docView.querySelector('#btn-paste-content');
-
-        //чтобы скролить к контенту в случае с overflow scroll
-        scrollToEl(docView, pasteBtn, 90);
-
-        pasteBtn.addEventListener('click', () => {
-          const componentName = errorOption.getAttribute('name');
-          const index = +errorOption.getAttribute('set-content-index');
-          const pasteData = initialDocData.unfound_components
-            .find((component) => component.component_name === componentName);
-
-          index === 0
-            ? pasteData.text = pasteData.text + '\n'
-            : pasteData.text = '\n' + pasteData.text + '\n';
-
-          common.wrappedData =
-            common.wrappedData.substring(0, setContentIndex) +
-            `${pasteData.text}` +
-            common.wrappedData.substring(setContentIndex, common.wrappedData.length);
-          docData.innerHTML = common.wrappedData;
-
-          errorOption.setAttribute('disabled', 'true');
-          resetAttributes(index, pasteData.text.length);
-        });
-
-        // if (errorOption !== null) {
-        //   errorOption.arrow = new LeaderLine(
-        //     errorOption, pasteBtn,
-        //     {
-        //       path: 'grid',
-        //       color: '#FF2E86',
-        //       startPlug: 'behind',
-        //       endPlug: 'disc',
-        //       startSocket: 'right',
-        //       endSocket: 'left'
-        //     }
-        //   );
-        // }
-      }, delay);
+        errorOption.setAttribute('disabled', 'true');
+        resetAttributes(index, pasteData.text.length);
+      });
     });
 
     errorOption.addEventListener('mouseleave', () => {
-      clearTimeout(timeout);
+      // clearTimeout(timeout);
     });
   });
 }

@@ -1,3 +1,106 @@
+let leaderLines = {};
+
+export function addLeaderLineToEl(start, name, isError) {
+  let docDataWrapper = document.querySelector('.doc__view .simplebar-content-wrapper');
+  let errorOptionsWrapper = document.querySelector('.box.error .simplebar-content-wrapper');
+  let validOptionsWrapper = document.querySelector('.box.valid .simplebar-content-wrapper');
+
+  destroyLeaderLines();
+
+  let updateLeaderLinePosition = () => {
+    Object.values(leaderLines).map(value => {
+      value.position();
+    })
+  };
+
+  if (!isError) {
+    const validOptions = [...document.querySelectorAll(`#doc-data .highlight[name="${name}"]`)];
+    validOptions.forEach((docElement, idx) => {
+
+      docElement.style.backgroundColor = '#5cde98';
+
+      leaderLines[name + idx] = new LeaderLine(
+        start, docElement,
+        {
+          path: 'grid',
+          color: '#00CB5D',
+          startPlug: 'behind',
+          endPlug: 'arrow3',
+          startSocket: 'left',
+          endSocket: 'right',
+          positionByWindowResize: false,
+          showEffectName: 'draw',
+        }
+      );
+
+      if (errorOptionsWrapper) {
+        errorOptionsWrapper.removeEventListener('scroll', updateLeaderLinePosition)
+      }
+
+      if (docDataWrapper) {
+        setTimeout(() => {
+          docDataWrapper.addEventListener('scroll', updateLeaderLinePosition);
+
+        }, 250);
+      }
+      if (validOptionsWrapper) {
+        setTimeout(() => {
+          validOptionsWrapper.addEventListener('scroll', updateLeaderLinePosition);
+        }, 250);
+      }
+    });
+  } else {
+    let btnPasteMissingOption = document.querySelector('#btn-paste-content');
+
+    leaderLines.lineToMissingOption = new LeaderLine(
+      start, btnPasteMissingOption,
+      {
+        path: 'grid',
+        color: '#FF2E86',
+        startPlug: 'behind',
+        endPlug: 'arrow3',
+        startSocket: 'right',
+        endSocket: 'left',
+        positionByWindowResize: false
+      }
+    );
+
+    // setTimeout(() => {
+    //   docDataWrapper.onscroll = () => {
+    //     leaderLines.lineToMissingOption.position();
+    //   };
+    //
+    //   errorOptionsWrapper.onscroll = () => {
+    //     leaderLines.lineToMissingOption.position();
+    //   };
+    //
+    // }, 250);
+
+    if (validOptionsWrapper) {
+      validOptionsWrapper.removeEventListener('scroll', updateLeaderLinePosition)
+    }
+
+    if (docDataWrapper) {
+      setTimeout(() => {
+        docDataWrapper.addEventListener('scroll', updateLeaderLinePosition);
+      }, 250);
+    }
+    if (errorOptionsWrapper) {
+      setTimeout(() => {
+        errorOptionsWrapper.addEventListener('scroll', updateLeaderLinePosition);
+      }, 250);
+    }
+  }
+}
+
+export function destroyLeaderLines() {
+  Object.values(leaderLines).map(value => {
+    value.remove();
+  })
+
+  leaderLines = {};
+}
+
 export function parseComponentsList(data) {
   let listData;
 
@@ -46,50 +149,6 @@ export function resetAttributes(index, shiftValue) {
     }
   });
 }
-window.lines = {};
-
-export function addValidPlugLines(start, name) {
-  const docElements = [...document.querySelectorAll(`#doc-data .highlight[name="${name}"]`)];
-  Object.values(lines).map(value => {
-    value.remove();
-  })
-
-  window.lines = {}
-
-  docElements.forEach((docElement, idx) => {
-
-    lines[name + idx] = new LeaderLine(
-      start, docElement,
-      {
-        path: 'grid',
-        color: '#00CB5D',
-        startPlug: 'behind',
-        endPlug: 'arrow3',
-        startSocket: 'left',
-        endSocket: 'right',
-        positionByWindowResize: false
-      }
-    );
-
-    setTimeout(() => {
-      let wrapper = document.querySelector('.box.valid .simplebar-content-wrapper');
-      wrapper.onscroll = () => {
-        Object.values(lines).map(value => {
-          value.position();
-        })
-      }
-    }, 500);
-
-    setTimeout(() => {
-      let wrapper = document.querySelector('.doc__view .simplebar-content-wrapper');
-      wrapper.onscroll = () => {
-        Object.values(lines).map(value => {
-          value.position();
-        })
-      }
-    }, 500);
-  });
-}
 
 export function wrapValidTextComponents(validOptions, errorOptions, initialText) {
   let validData = [];
@@ -126,7 +185,7 @@ export function wrapValidTextComponents(validOptions, errorOptions, initialText)
   let doc = new Mark(document.getElementById('doc-data'));
 
   doc.markRanges(validData, {
-    element: 'mark',
+    element: 'span',
     className: 'highlight',
     each: function(node, data) {
       node.setAttribute('name', data.name);

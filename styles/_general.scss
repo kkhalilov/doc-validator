@@ -15,24 +15,7 @@ body {
   box-sizing: border-box;
 }
 
-//scroll
-//::-webkit-scrollbar-track
-//{
-//  border-radius: 4px;
-//  background-color: #fff;
-//}
-//
-//::-webkit-scrollbar
-//{
-//  width: 4px;
-//  background-color: #fff;
-//}
-//
-//::-webkit-scrollbar-thumb
-//{
-//  border-radius: 2px;
-//  background-color: #ffb7b7;
-//}
+
 
 //restyle highlighter
 .doc__view ::selection {
@@ -55,6 +38,7 @@ body {
 
 .leader-line {
   position: fixed !important;
+  z-index: 1;
 }
 
 //modal dialog
@@ -115,6 +99,49 @@ body {
 
 }
 
+//checkbox
+/*  CSS for slider */
+.slider-checkbox [type="checkbox"] {
+  display: none;
+}
+
+/*  Height and width can be adjusted,
+    Border radius is 50% of height */
+.slider-checkbox label {
+  display: block;
+  width: 40px;
+  height: 20px;
+  position: relative;
+  background: #d2d2d2;
+  border-radius: 10px;
+  transition: background 0.2s ease;
+  cursor: pointer;
+}
+
+.slider-checkbox label::before {
+  content: '';
+  display: block;
+  width: 50%;
+  height: 100%;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #c3c3c3;
+  position: absolute;
+  left: 0;
+  top: 0;
+  transition: transform 0.2s ease-in-out;
+}
+
+/*  CSS for when slider is checked: */
+.slider-checkbox [type="checkbox"]:checked + label {
+  background: #4caf50;
+}
+
+.slider-checkbox [type="checkbox"]:checked + label::before {
+  -webkit-transform: translateX(100%);
+  transform: translateX(100%);
+}
+
 //paste btn
 .btn-paste-content {
   position: relative;
@@ -151,14 +178,6 @@ body {
     //  border-top: 5px solid #FF2E86;
     //  transform: translate(-50%, 100%);
     //}
-  }
-}
-//highlight
-.highlight {
-  background-color: #5cde98;
-  &:hover {
-    background-color: #6F3091;
-    cursor: pointer;
   }
 }
 
@@ -293,6 +312,7 @@ body {
 .step__4 {
   //padding-top: 32px;
   padding-top: 20px;
+  padding-bottom: 20px;
   height: calc(100vh - #{$nav-height});
   min-height: calc(100vh - #{$nav-height});
   .result-container {
@@ -304,13 +324,29 @@ body {
     grid-column-gap: 50px;
     .doc__view {
       overflow-y: auto;
-      white-space: pre-line;
       padding: 32px;
       width: 100%;
       height: 100%;
       background: #fff;
       box-shadow: 0 0 16px rgba(0, 0, 0, 0.25);
       border-radius: 4px;
+      .highlight {
+        background-color: transparent;
+        transition: background-color 0.2s ease-in-out;
+
+      }
+      &.highlighted {
+        .highlight {
+          background-color: #5cde98;
+          &:hover {
+            background-color: #4aba7e;
+            cursor: pointer;
+          }
+        }
+      }
+      .doc__data {
+        white-space: pre-line;
+      }
     }
     .box {
       overflow-y: auto;
@@ -369,6 +405,8 @@ body {
           }
         }
         .box__list__item {
+          //transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out;
+
           &:before {
             background-color: #00CB5D;
             border-color: #00CB5D;
