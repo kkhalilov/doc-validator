@@ -45,6 +45,7 @@
   font-weight: bold;
   border: 0;
   font-size: 18px;
+  transition: box-shadow 0.25s, transform 0.25s;
   width: fit-content;
   cursor: pointer;
   padding: 10px 16px;
@@ -54,18 +55,20 @@
 .btn--primary {
   padding: 16px 32px;
   background: #6F3091;
-  box-shadow: inset 0px -4px 0px rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 -6px rgba(0, 0, 0, 0.25);
 }
 .btn--primary:hover {
-  background-color: #5d2879;
+  box-shadow: inset 0 -3px rgba(0, 0, 0, 0.2);
+  transform: translateY(2px) scaleY(0.95);
 }
 .btn--green {
   padding: 8px 24px;
   background: #00CB5D;
-  box-shadow: inset 0px -4px 0px rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 -4px rgba(0, 0, 0, 0.25);
 }
 .btn--green:hover {
-  background-color: #01b955;
+  box-shadow: inset 0 -3px rgba(0, 0, 0, 0.2);
+  transform: translateY(2px) scaleY(0.95);
 }
 
 body {
@@ -77,6 +80,15 @@ body {
   position: relative;
   padding-top: 64px;
   font-family: "PT Sans", sans-serif;
+}
+
+#particles-js {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: -1;
 }
 
 * {
@@ -158,13 +170,14 @@ body {
   border-radius: 0.25rem;
 }
 
-/*  CSS for slider */
+.slider-checkbox {
+  padding-right: 2px;
+}
+
 .slider-checkbox [type=checkbox] {
   display: none;
 }
 
-/*  Height and width can be adjusted,
-    Border radius is 50% of height */
 .slider-checkbox label {
   display: block;
   width: 40px;
@@ -190,7 +203,6 @@ body {
   transition: transform 0.2s ease-in-out;
 }
 
-/*  CSS for when slider is checked: */
 .slider-checkbox [type=checkbox]:checked + label {
   background: #4caf50;
 }
@@ -253,6 +265,7 @@ body {
 }
 
 .nav {
+  color: #fff;
   z-index: 10;
   position: fixed;
   top: 0;
@@ -266,6 +279,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+.nav__item:nth-child(2) {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 .nav__logo {
   background: url(../images/logo.svg) no-repeat;
@@ -288,8 +306,6 @@ body {
 
 .wrapper {
   width: 100%;
-  max-height: calc(100vh - 64px);
-  height: calc(100vh - 64px);
 }
 .wrapper .content {
   max-width: 1280px;
@@ -389,7 +405,7 @@ body {
   white-space: pre-line;
 }
 .step__4 .result-container .box {
-  overflow-y: auto;
+  overflow: hidden;
   width: 100%;
   height: 100%;
   font-style: normal;
@@ -397,14 +413,19 @@ body {
   font-size: 16px;
   line-height: 20px;
 }
-.step__4 .result-container .box__title {
+.step__4 .result-container .box .box__header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+}
+.step__4 .result-container .box .box__header .box__title {
+  display: flex;
+  align-items: center;
   font-weight: 700;
   line-height: 23px;
 }
-.step__4 .result-container .box__title .amount {
+.step__4 .result-container .box .box__header .box__title .amount {
   color: #fff;
   display: flex;
   justify-content: center;
@@ -412,6 +433,11 @@ body {
   padding: 2px 8px;
   border-radius: 8px;
   margin-right: 8px;
+}
+.step__4 .result-container .box .box__list {
+  height: calc(100vh - 155px);
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 .step__4 .result-container .box.error .box__title {
   color: #FF002E;

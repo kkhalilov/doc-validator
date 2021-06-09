@@ -15,24 +15,18 @@
       <div class="nav__logo"></div>
     </div>
     <div class="nav__item">
-      <div class="nav__doc-title">
-        Мой новый договор-new-lastversion.txt
-      </div>
+      <div class="nav__doc-title" id="file-name"></div>
     </div>
     <div class="nav__item">
-      <button type="button" class="btn btn--green">Сохранить</button>
+      <button type="button" class="btn btn--green d-none" id="btn-save-file">Сохранить</button>
     </div>
   </div>
 
   <div class="wrapper">
     <div class="content">
-      <div class="step__1" id="app">
-        <button class="btn btn--primary mb-32" id="check-doc">Проверить документы</button>
-        <div class="subtitle">Мы поддерживаем документы в формете .txt</div>
-      </div>
+      <div id="app"></div>
     </div>
   </div>
-
   <div class="modal" id="modal">
     <div class="modal__body">
       <form id="client-description">
@@ -45,11 +39,11 @@
     </div>
   </div>
 
-  <script src="./node_modules/leader-line/leader-line.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/simplebar@latest/dist/simplebar.min.js"></script>
-  <script src="https://unpkg.com/@popperjs/core@2/dist/umd/popper.min.js"></script>
-  <script src="https://unpkg.com/tippy.js@6/dist/tippy-bundle.umd.js"></script>
+  <script src="libs/leader-line/leader-line.min.js"></script>
+  <script src="libs/mark/index.js"></script>
+  <script src="libs/popper/index.js"></script>
+  <script src="libs/tippy/index.js"></script>
+  <script src="libs/simplebar/index.js"></script>
 
   <script type="module" src="js/main.js"></script>
 </body>

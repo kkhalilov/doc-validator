@@ -12,7 +12,7 @@
   font-weight: bold;
   border: 0;
   font-size: 18px;
-  //transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+  transition: box-shadow .25s, transform .25s;
   width: fit-content;
   cursor: pointer;
   padding: 10px 16px;
@@ -22,18 +22,20 @@
   &--primary {
     padding: 16px 32px;
     background: #6F3091;
-    box-shadow: inset 0px -4px 0px rgba(0, 0, 0, 0.25);
+    box-shadow: inset 0 -6px rgba(0, 0, 0, 0.25);
     &:hover {
-      background-color: #5d2879;
+      box-shadow: inset 0 -3px rgba(0, 0, 0, 0.20);
+      transform: translateY(2px)scaleY(.95);
     }
   }
 
   &--green {
     padding: 8px 24px;
     background: #00CB5D;
-    box-shadow: inset 0px -4px 0px rgba(0, 0, 0, 0.25);
+    box-shadow: inset 0 -4px rgba(0, 0, 0, 0.25);
     &:hover {
-      background-color: #01b955;
+      box-shadow: inset 0 -3px rgba(0, 0, 0, 0.20);
+      transform: translateY(2px)scaleY(.95);
     }
   }
 }

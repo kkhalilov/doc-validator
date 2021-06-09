@@ -1,9 +1,15 @@
 let leaderLines = {};
 
 export function addLeaderLineToEl(start, name, isError) {
-  let docDataWrapper = document.querySelector('.doc__view .simplebar-content-wrapper');
-  let errorOptionsWrapper = document.querySelector('.box.error .simplebar-content-wrapper');
-  let validOptionsWrapper = document.querySelector('.box.valid .simplebar-content-wrapper');
+  let docDataWrapper = document.querySelector('.doc__view .simplebar-content-wrapper')
+    ? document.querySelector('.doc__view .simplebar-content-wrapper')
+    : document.querySelector('.doc__view');
+  let errorOptionsWrapper = document.querySelector('.box.error .simplebar-content-wrapper')
+    ? document.querySelector('.box.error .simplebar-content-wrapper')
+    : document.querySelector('.box.error .box__list');
+  let validOptionsWrapper = document.querySelector('.box.valid .simplebar-content-wrapper')
+    ? document.querySelector('.box.valid .simplebar-content-wrapper')
+    : document.querySelector('.box.valid .box__list');
 
   destroyLeaderLines();
 
@@ -96,9 +102,25 @@ export function addLeaderLineToEl(start, name, isError) {
 export function destroyLeaderLines() {
   Object.values(leaderLines).map(value => {
     value.remove();
-  })
+  });
 
   leaderLines = {};
+}
+
+export function getErrorOptionsIndexes() {
+  const errorOptions = document.querySelectorAll('.box.error .box__list__item');
+
+  return [...errorOptions].map(option => {
+    return +option.getAttribute('set-content-index');
+  })
+}
+
+export function setErrorOptionsIndexes(indexes) {
+  const errorOptions = document.querySelectorAll('.box.error .box__list__item');
+
+  [...errorOptions].forEach((option, idx) => {
+    option.setAttribute('set-content-index', indexes[idx]);
+  });
 }
 
 export function parseComponentsList(data) {
@@ -119,26 +141,26 @@ export function parseComponentsList(data) {
 }
 
 export function resetAttributes(index, shiftValue) {
-  const listItems = [...document.querySelectorAll('.box__list .box__list__item')];
+  const listItems = [...document.querySelectorAll('.box.error .box__list .box__list__item')];
 
   listItems.forEach(item => {
     const highlightIndices = item.getAttribute('highlight-indices');
 
-    if (highlightIndices) {
-      let shiftedHighlightAttr = highlightIndices.split(',').map(indices => {
-        let startIndex = +indices.split('/')[0];
-        let stopIndex = +indices.split('/')[1];
-
-        if (startIndex >= index) {
-          startIndex += shiftValue;
-          stopIndex += shiftValue;
-        }
-
-        return `${startIndex}/${stopIndex}`;
-      }).join(',');
-
-      item.setAttribute('highlight-indices', shiftedHighlightAttr);
-    } else {
+    // if (highlightIndices) {
+    //   let shiftedHighlightAttr = highlightIndices.split(',').map(indices => {
+    //     let startIndex = +indices.split('/')[0];
+    //     let stopIndex = +indices.split('/')[1];
+    //
+    //     if (startIndex >= index) {
+    //       startIndex += shiftValue;
+    //       stopIndex += shiftValue;
+    //     }
+    //
+    //     return `${startIndex}/${stopIndex}`;
+    //   }).join(',');
+    //
+    //   item.setAttribute('highlight-indices', shiftedHighlightAttr);
+    // } else {
       let setContentIndex = +item.getAttribute('set-content-index');
 
       if (setContentIndex >= index) {
@@ -146,7 +168,21 @@ export function resetAttributes(index, shiftValue) {
       }
 
       item.setAttribute('set-content-index', setContentIndex);
+    // }
+  });
+}
+
+export function revertAttributes(startIndex, lengthOfData) {
+  const listItems = [...document.querySelectorAll('.box.error .box__list .box__list__item')];
+
+  listItems.forEach(item => {
+    let setContentIndex = +item.getAttribute('set-content-index');
+
+    if (setContentIndex >= startIndex) {
+      setContentIndex -= lengthOfData;
     }
+
+    item.setAttribute('set-content-index', setContentIndex);
   });
 }
 
@@ -199,24 +235,48 @@ export function wrapValidTextComponents(validOptions, errorOptions, initialText)
             errorItemIndex + (node.outerHTML.length - node.innerHTML.length)
           );
         }
-      })
+      });
       //для тултипов
-      // tippy(node, {
-      //   content: data.description.replace(/-/g, ' '),
-      //   delay: 400,
-      // });
+      tippy(node, {
+        content: data.description.replace(/-/g, ' '),
+        delay: 250,
+        onShow() {
+          return !!document.querySelector('.doc__view.highlighted');
+        },
+      });
     },
   });
 
 }
 
 export function scrollToEl(container, el, topIndent) {
-  container.querySelector('.simplebar-content-wrapper')
-    .scrollTo(
-      {
-        top: el.offsetTop - topIndent, behavior: "auto"
-      }
-    );
+  if (container.querySelector('.simplebar-content-wrapper')) {
+
+    container.querySelector('.simplebar-content-wrapper')
+      .scrollTo(
+        {
+          top: el.offsetTop - topIndent, behavior: 'auto'
+        }
+      );
+  } else {
+    container.scrollTo(
+        {
+          top: el.offsetTop - topIndent, behavior: 'auto'
+        }
+      );
+  }
+}
+
+export function declension(num, titles) {
+  const number = parseInt(num);
+  const  cases = [2, 0, 1, 1, 1, 2]
+  const declination = titles[
+    number % 100 > 4 && number % 100 < 20
+      ? 2
+      : cases[number % 10 < 5 ? number % 10 : 5]
+    ];
+
+  return `${declination}`;
 }
 
 function setDocItemIndices(itemData) {
