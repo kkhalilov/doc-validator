@@ -80,6 +80,7 @@ body {
   position: relative;
   padding-top: 64px;
   font-family: "PT Sans", sans-serif;
+  overflow: hidden;
 }
 
 #particles-js {
@@ -114,6 +115,25 @@ body {
     transform: rotate(360deg);
   }
 }
+@keyframes rotateBack {
+  0% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(-40deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+@keyframes fadeOut {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
 .leader-line {
   position: fixed !important;
   z-index: 1;
@@ -121,17 +141,27 @@ body {
 
 .modal {
   display: none;
+  text-align: left;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
   max-width: 250px;
   position: absolute;
-  top: 100px;
-  left: 100px;
-  transform: translate(16px, 0);
+  top: 0;
+  left: 0;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
   background-color: #fff;
   z-index: 22;
   color: #000;
   font-size: 12px;
   flex-direction: column;
+}
+.modal.show {
+  display: flex;
+}
+.modal__select {
+  width: 100%;
+  font-size: 15px;
 }
 .modal__header {
   padding: 16px;
@@ -266,7 +296,7 @@ body {
 
 .nav {
   color: #fff;
-  z-index: 10;
+  z-index: 9999999;
   position: fixed;
   top: 0;
   left: 0;
@@ -394,6 +424,9 @@ body {
   background-color: transparent;
   transition: background-color 0.2s ease-in-out;
 }
+.step__4 .result-container .doc__view .highlight.active {
+  background-color: #5cde98;
+}
 .step__4 .result-container .doc__view.highlighted .highlight {
   background-color: #5cde98;
 }
@@ -402,6 +435,7 @@ body {
   cursor: pointer;
 }
 .step__4 .result-container .doc__view .doc__data {
+  position: relative;
   white-space: pre-line;
 }
 .step__4 .result-container .box {
@@ -434,6 +468,37 @@ body {
   border-radius: 8px;
   margin-right: 8px;
 }
+.step__4 .result-container .box .box__header .box__undo {
+  pointer-events: none;
+  cursor: default;
+  width: 25px;
+  height: 25px;
+  border-radius: 4px;
+  background-color: #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.25s ease-in-out;
+}
+.step__4 .result-container .box .box__header .box__undo.show {
+  cursor: pointer;
+  background-color: #6F3091;
+  pointer-events: auto;
+}
+.step__4 .result-container .box .box__header .box__undo.show:hover img {
+  background-color: #6f3091;
+  transform: rotate(-40deg);
+}
+.step__4 .result-container .box .box__header .box__undo.show img {
+  animation: rotateBack 0.5s ease-out 0.25s;
+  transition: transform 0.25s ease-out;
+}
+.step__4 .result-container .box .box__header .box__undo img {
+  transform: rotate(-5deg);
+  transform-origin: center;
+  width: 15px;
+  height: 15px;
+}
 .step__4 .result-container .box .box__list {
   height: calc(100vh - 155px);
   overflow-y: auto;
@@ -444,6 +509,9 @@ body {
 }
 .step__4 .result-container .box.error .box__title .amount {
   background-color: #FF2E86;
+}
+.step__4 .result-container .box.error .box__list__item {
+  animation: fadeOut 1s ease-out;
 }
 .step__4 .result-container .box.error .box__list__item[disabled=true] {
   cursor: default;
@@ -464,6 +532,9 @@ body {
 }
 .step__4 .result-container .box.valid .box__title .amount {
   background-color: #00CB5D;
+}
+.step__4 .result-container .box.valid .box__list__item {
+  animation: fadeOut 1s ease-out;
 }
 .step__4 .result-container .box.valid .box__list__item:before {
   background-color: #00CB5D;

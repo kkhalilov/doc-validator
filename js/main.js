@@ -1,26 +1,13 @@
-import {
-  parseComponentsList,
-  resetAttributes,
-  wrapValidTextComponents,
-  scrollToEl,
-  addLeaderLineToEl,
-  destroyLeaderLines,
-  declension,
-  revertAttributes,
-} from '../utils/index.js';
-
-import {
-  updateHistory,
-  getUserHistory,
-  popHistoryData,
-} from '../utils/history.js'
+import services from '../services/index.js';
+import {declension} from '../utils/index.js';
 
 let common = {};
 
-window.onload = () => onInit();
+window.onload = () => showStructure();
 
 function onInit() {
   common = {};
+  common.allowTooltips = false;
   common.app = document.getElementById('app');
   common.app.innerText = '';
   common.app.classList.add('step__1');
@@ -35,7 +22,7 @@ function onInit() {
   uploadDocBtn.addEventListener('click', () => {
     const inputElement = document.getElementById('load-file-input');
     inputElement.addEventListener('change', handleFile, false);
-      inputElement.click();
+    inputElement.click();
   });
 }
 
@@ -103,15 +90,10 @@ function onInitResults() {
             <span class="amount">
               ${common.unfoundComponentsList.length}
             </span>
-            ${declension(common.unfoundComponentsList.length, [
-                'раздел отсутствует',
-                'раздела отсутствуют',
-                'разделов отсутствуют',
-              ])
-            }
+            ${declension(common.unfoundComponentsList.length, ['раздел отсутствует', 'раздела отсутствуют', 'разделов отсутствуют'])}
           </div>
           <div class="box__list">
-            ${parseComponentsList(common.unfoundComponentsList)}
+            ${services.build.parseComponentsList(common.unfoundComponentsList)}
           </div>
         </div>
         <div class="box">
@@ -119,15 +101,10 @@ function onInitResults() {
             <span class="amount">
               ${common.foundComponentsList.length}
             </span>
-            ${declension(common.foundComponentsList.length, [
-                'валидный раздел',
-                'валидных разделов',
-                'валидных разделов',
-              ])
-            }
+            ${declension(common.foundComponentsList.length, ['валидный раздел', 'валидных разделов', 'валидных разделов'])}
           </div>
           <div class="box__list">
-            ${parseComponentsList(common.foundComponentsList)}
+            ${services.build.parseComponentsList(common.foundComponentsList)}
           </div>
         </div>
       </div>
@@ -140,10 +117,33 @@ function onInitResults() {
   showStructureBtn.addEventListener('click', showStructure);
 }
 
-function showStructure() {
+async function showStructure() {
+  //temp
+  common = {};
+  common.allowTooltips = false;
+  common.app = document.getElementById('app');
+  let initialDocData = {};
+
+  await fetch('./data.json').then(res => res.json())
+    .then(data => {
+      initialDocData = data
+    })
+  common.initialDocData = initialDocData;
+  common.foundComponentsList = initialDocData.found_components.map(item => {
+    const descriptionText = initialDocData.description[item.component_name];
+    return {descriptionText, ...item};
+  })
+  common.unfoundComponentsList = initialDocData.unfound_components.map(item => {
+    const descriptionText = initialDocData.description[item.component_name];
+    return {descriptionText, ...item};
+  })
+
+  //temp
+
+
   window.scrollTo(0, 0);
 
-  const initialDocData = common.initialDocData;
+  // const initialDocData = common.initialDocData;
 
   common.app.innerHTML = '';
   common.app.className = '';
@@ -152,37 +152,28 @@ function showStructure() {
       <div class="result-container">
         <div class="box error">
           <div class="box__header">
-            <div class="box__title">
-              <span class="amount" id="error-options-amount">
+            <div class="box__title" data-amount="${common.unfoundComponentsList.length}">
+              <span class="amount">
                  ${common.unfoundComponentsList.length}
               </span> 
-              ${declension(common.unfoundComponentsList.length, [
-                  'Отсутсвует',
-                  'Отсутсвуют',
-                  'Отсутсвуют',
-                ])
-              }
+              ${declension(common.unfoundComponentsList.length, ['Отсутсвует', 'Отсутсвуют', 'Отсутсвуют'])}
+            </div>
+            <div class="box__undo">
+              <img src="../images/icon-undo.svg" alt="undo">
             </div>   
           </div>
           <div class="box__list" data-simplebar data-simplebar-auto-hide="false">
-            ${parseComponentsList(common.unfoundComponentsList)}
+            ${services.build.parseComponentsList(common.unfoundComponentsList)}
           </div>
         </div>
         <div class="doc__view" data-simplebar data-simplebar-auto-hide="false">
-          <div class="doc__data" id="doc-data">${initialDocData.text} <div id="cal1">&nbsp;</div>
-          <div id="cal2">&nbsp;</div></div>
-        
+          <div class="doc__data" id="doc-data">${initialDocData.text}</div>
         </div>
         <div class="box valid">
           <div class="box__header">
-            <div class="box__title">
+            <div class="box__title" data-amount="${common.foundComponentsList.length}">
               <span class="amount">${common.foundComponentsList.length}</span>
-              ${declension(common.foundComponentsList.length, [
-                  'Присутствует',
-                  'Присутствуют',
-                  'Присутствуют',
-                ])
-              }
+              ${declension(common.foundComponentsList.length, ['Присутствует', 'Присутствуют', 'Присутствуют'])}
             </div>
             <div class="">
               <div class="slider-checkbox">
@@ -192,7 +183,7 @@ function showStructure() {
             </div>
           </div>
           <div class="box__list" data-simplebar data-simplebar-auto-hide="false" id="box-valid">
-            ${parseComponentsList(common.foundComponentsList)}
+            ${services.build.parseComponentsList(common.foundComponentsList)}
           </div>
         </div>
       </div>
@@ -200,229 +191,131 @@ function showStructure() {
 
   const docView = document.querySelector('.doc__view');
   const docData = document.getElementById('doc-data');
-  const validOptionsContainer = document.querySelector('.box.valid');
   const validOptions = document.querySelectorAll('.box.valid .box__list__item');
-  const errorOptionsContainer = document.querySelector('.box.error');
   const errorOptions = document.querySelectorAll('.box.error .box__list__item');
   const viewTrigger = document.getElementById('view-trigger');
-  const errorOptionsAmount = document.querySelector('.box.error .amount');
-  const validOptionsAmount = document.querySelector('.box.valid .amount');
-
-  const modal = document.getElementById('modal');
-  const modalInput = document.getElementById('name-of-component');
+  const undoBtn = document.querySelector('.box.error .box__undo');
 
   //оборачиваем все валидные текстовые объекты
-  wrapValidTextComponents(validOptions, errorOptions, common.initialDocData.text);
-  common.wrappedData = docData.innerHTML;
+  services.build.wrapValidTextComponents(validOptions, errorOptions, common.initialDocData.text);
+  services.modal.createModal(common.initialDocData.description);
 
   //гетим выделенный фрагмент текста
-  // docData.addEventListener('mouseup', e => {
-  //   setTimeout(() => {
-  //     if (window.getSelection().toString().length) {
-  //       let scrollTop = document.documentElement.scrollTop;
-  //       modal.style.display = 'flex';
-  //       modal.style.left = `${e.clientX}px`;
-  //       modal.style.top = `${e.clientY + scrollTop}px`;
-  //       let exactText = window.getSelection().toString();
-  //       console.log('!!!!text', exactText);
-  //
-  //     }
-  //   }, 10);
-  // });
-  // document.documentElement.addEventListener('mousedown', (e) => {
-  //   if (e.target.closest('#modal')) {
-  //     return;
-  //   }
-  //
-  //   modal.style.display = 'none';
-  // });
-
-  const ele = document.getElementById('modal');
-  const sel = window.getSelection();
-  const rel1= document.createRange();
-  rel1.selectNode(document.getElementById('cal1'));
-  const rel2= document.createRange();
-  rel2.selectNode(document.getElementById('cal2'));
-  document.querySelector('.doc__view').addEventListener('mouseup', function () {
-    if (!sel.isCollapsed) {
-      console.log('selected text', sel)
-      const r = sel.getRangeAt(0).getBoundingClientRect();
-      const rb1 = rel1.getBoundingClientRect();
-      const rb2 = rel2.getBoundingClientRect();
-      ele.style.top = (r.bottom - rb2.top)*100/(rb1.top-rb2.top) + 'px'; //this will place ele below the selection
-      ele.style.left = (r.left - rb2.left)*100/(rb1.left-rb2.left) + 'px'; //this will align the right edges together
-
-      //code to set content
-
-      ele.style.display = 'block';
+  docData.addEventListener('mouseup', e => {
+    if (e.target.closest('.doc__view')) {
+      services.modal.showModal(e)
     }
   });
 
-  viewTrigger.addEventListener('change', () => {
-    console.log('click');
-    docView.classList.toggle('highlighted');
-
+  document.documentElement.addEventListener('mousedown', (e) => {
+      services.modal.hideModal(e);
   });
 
-  document.onkeydown = () => {
-    let evtobj = window.event ? event : e
+  viewTrigger.addEventListener('change', () => {
+    common.allowTooltips = !common.allowTooltips;
+    docView.classList.toggle('highlighted');
 
-    if (evtobj.keyCode === 90 && evtobj.ctrlKey) {
-      const historyData = getUserHistory();
-      console.log(historyData)
+    services.board.setTooltips(common.allowTooltips);
+  });
+
+  undoBtn.addEventListener('click', () => {
+      const historyData = services.history.getUserHistory();
+
       if (historyData.length) {
-        // common.wrappedData = historyData[historyData.length - 1].wrappedData;
-        // docData.innerHTML = historyData[historyData.length - 1].wrappedData;
-
-        destroyLeaderLines();
-        const btnAddContent = document.querySelector('#btn-paste-content');
-        if (btnAddContent) btnAddContent.remove();
-        [...validOptions, ...errorOptions].forEach(item => {
-          item.classList.remove('active');
-        });
-
+        services.board.updateOptionsTitles(false, common.unfoundComponentsList.length);
+        services.board.clearBoard();
 
         //переносим елемент
-        const errorOptionsContainerList = document.querySelector('.box.error .simplebar-content')
-          ? document.querySelector('.box.error .simplebar-content')
-          : document.querySelector('.box.error .box__list');
+        const errorOptionsContainerList = document.querySelector('.box.error .simplebar-content');
         const removedElData = historyData[historyData.length - 1];
+        const revertedTextContent = document.querySelector(`.doc__view .highlight[name="${removedElData.name}"]`);
 
         //удаляем ревертнутый текст из дома
-        document.querySelector(`.doc__view .highlight[name="${removedElData.name}"]`).remove();
+        revertedTextContent.remove();
 
-        revertAttributes(removedElData.startIndex, removedElData.lengthOfData);
+        services.board.revertAttributes(removedElData.startIndex, removedElData.lengthOfData);
+        services.history.popHistoryData();
 
         removedElData.hideOption.removeEventListener('click', validFunc)
         removedElData.hideOption.addEventListener('click', errorFunc)
         errorOptionsContainerList.insertBefore(removedElData.hideOption, errorOptionsContainerList.firstChild);
-
-        popHistoryData();
-
-        errorOptionsAmount.textContent = +errorOptionsAmount.textContent + 1;
-        validOptionsAmount.textContent = +validOptionsAmount.textContent - 1;
-
       }
-    }
-  };
+  });
 
-  validOptions.forEach(function(validOption, idx) {
+  validOptions.forEach(function (validOption) {
     validOption.addEventListener('click', validFunc);
   });
 
-  errorOptions.forEach(function(errorOption) {
+  errorOptions.forEach(function (errorOption) {
     errorOption.addEventListener('click', errorFunc);
   });
 }
 
 function validFunc() {
-  destroyLeaderLines();
-  const btnAddContent = document.querySelector('#btn-paste-content');
-  if (btnAddContent) btnAddContent.remove();
-
-  const errorOptions = document.querySelectorAll('.box.error .box__list__item');
-  const validOptions = document.querySelectorAll('.box.valid .box__list__item');
   const docView = document.querySelector('.doc__view');
-  const docData = document.getElementById('doc-data')
   const componentName = this.getAttribute('name');
 
-  //очищаем от кнопки вставить в случае если она есть
-  // docData.innerHTML = common.wrappedData;
-
-
-  [...validOptions, ...errorOptions].forEach(item => {
-    item.classList.remove('active');
-  });
+  services.board.clearBoard();
 
   this.classList.add('active');
 
   //скролим к нужному элементу
-  scrollToEl(
+  services.board.scrollToEl(
     docView,
     docView.querySelector(`.highlight[name="${componentName}"]`),
     20
   );
 
-  addLeaderLineToEl(this, componentName, false);
+  services.board.addLeaderLineToEl(this, componentName, false);
 }
 
 function errorFunc() {
-  destroyLeaderLines();
-  const btnAddContent = document.querySelector('#btn-paste-content');
-  if (btnAddContent) btnAddContent.remove();
   const initialDocData = common.initialDocData;
-  const errorOptionsAmount = document.querySelector('.box.error .amount');
-  const validOptionsAmount = document.querySelector('.box.valid .amount');
   const docData = document.getElementById('doc-data')
   const docView = document.querySelector('.doc__view');
-  const errorOptions = document.querySelectorAll('.box.error .box__list__item');
-  const validOptions = document.querySelectorAll('.box.valid .box__list__item');
-
-  //сетим глобально обернутые куски текста
-  let docDataWrapped = docData.innerHTML;
   const setContentIndex = +this.getAttribute('set-content-index');
   const name = this.getAttribute('name');
 
-  if (this.getAttribute('disabled')) return;
-
-  [...validOptions, ...errorOptions].forEach(item => {
-    item.classList.remove('active');
-  });
+  services.board.clearBoard();
+  services.board.setTooltips(common.allowTooltips);
 
   this.classList.add('active');
 
-  console.log('setContentIndex', setContentIndex);
   docData.innerHTML =
     docData.innerHTML.substring(0, setContentIndex) +
-    '<div id="btn-paste-content" class="btn-paste-content">' +
-      '<div class="inner">Вставить</div>' +
-    '</div>' +
+      '<div id="btn-paste-content" class="btn-paste-content">' +
+        '<div class="inner">Вставить</div>' +
+      '</div>' +
     docData.innerHTML.substring(setContentIndex, docData.innerHTML.length);
-
-
 
   const btnPasteMissingOption = document.querySelector('#btn-paste-content');
 
-  //чтобы скролить к контенту в случае с overflow scroll
-  scrollToEl(docView, btnPasteMissingOption, 90);
-
-  addLeaderLineToEl(this, '', true);
+  services.board.scrollToEl(docView, btnPasteMissingOption, 90);
+  services.board.addLeaderLineToEl(this, '', true);
 
   btnPasteMissingOption.addEventListener('click', () => {
+    const validOptionsContainerList = document.querySelector('.box.valid .simplebar-content');
     const componentName = this.getAttribute('name');
     const index = +this.getAttribute('set-content-index');
     const pasteData = initialDocData.unfound_components
       .find((component) => component.component_name === componentName);
+    const pastedDataContent = `<div name="${name}" class="highlight">${pasteData.text}</div>`;
 
-    this.classList.remove('active');
-
-    errorOptionsAmount.textContent = +errorOptionsAmount.textContent - 1;
-    validOptionsAmount.textContent = +validOptionsAmount.textContent + 1;
-
-    destroyLeaderLines();
-    const btnAddContent = document.querySelector('#btn-paste-content');
-    if (btnAddContent) btnAddContent.remove();
+    services.board.updateOptionsTitles(true, common.unfoundComponentsList.length);
+    services.board.clearBoard();
 
     docData.innerHTML =
       docData.innerHTML.substring(0, setContentIndex) +
-      `<div name="${name}" class="highlight">${pasteData.text}</div>` +
+        pastedDataContent +
       docData.innerHTML.substring(setContentIndex, docData.innerHTML.length);
 
-    //переносим елемент
-    const validOptionsContainerList = document.querySelector('.box.valid .simplebar-content')
-      ? document.querySelector('.box.valid .simplebar-content')
-      : document.querySelector('.box.valid .box__list');
-    // const removedElNode = document.querySelector(`.box.error .box__list__item[name="${name}"]`);
-    // const removedElNodeClone = this.cloneNode(true);
-
-    // removedElNode.style.display = 'block';
-    console.log('this',this)
     this.removeEventListener('click', errorFunc);
-    this.addEventListener('click', validFunc );
+    this.addEventListener('click', validFunc);
+
     validOptionsContainerList.insertBefore(this, validOptionsContainerList.firstChild);
 
-    updateHistory(this, `<div name="${name}" class="highlight">${pasteData.text}</div>`.length, index, name);
-    resetAttributes(index, `<div name="${name}" class="highlight">${pasteData.text}</div>`.length);
-
+    services.history.updateHistory(this, pastedDataContent.length, index, name);
+    services.board.updateAttributes(index, pastedDataContent.length);
+    services.board.setTooltips(common.allowTooltips);
   });
 }

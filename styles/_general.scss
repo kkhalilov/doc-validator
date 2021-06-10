@@ -7,6 +7,7 @@ body {
   position: relative;
   padding-top: $nav-height;
   font-family: $font-family-base;
+  overflow: hidden;
 }
 
 #particles-js {
@@ -44,6 +45,27 @@ body {
   }
 }
 
+@keyframes rotateBack {
+  0% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(-40deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 .leader-line {
   position: fixed !important;
   z-index: 1;
@@ -51,22 +73,32 @@ body {
 
 //modal dialog
 .modal {
+
   display: none;
+  text-align: left;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
   max-width: 250px;
   position: absolute;
-  top: 100px;
-  left: 100px;
-  transform: translate(16px, 0);
+  top: 0;
+  left: 0;
   box-shadow: 0 0 20px rgb(0 0 0 / 25%);
   background-color: #fff;
-  //background-color: #C33960;
-  //transform: translate(10px, -50%);
-  //border-radius: 4px;
   z-index: 22;
   color: #000;
   font-size: 12px;
+
   //pointer-events: none;
   flex-direction: column;
+  &.show {
+    display: flex;
+  }
+  &__select {
+    width: 100%;
+    font-size: 15px;
+  }
+
   &__header {
     padding: 16px;
     .modal__title {
@@ -220,7 +252,7 @@ body {
 
   .nav {
     color: #fff;
-    z-index: 10;
+    z-index: 9999999;
     position: fixed;
     top: 0;
     left: 0;
@@ -346,6 +378,10 @@ body {
         background-color: transparent;
         transition: background-color 0.2s ease-in-out;
 
+        &.active {
+          background-color: #5cde98;
+        }
+
       }
       &.highlighted {
         .highlight {
@@ -357,6 +393,7 @@ body {
         }
       }
       .doc__data {
+        position: relative;
         white-space: pre-line;
       }
     }
@@ -388,7 +425,42 @@ body {
             margin-right: 8px;
           }
         }
+        .box__undo {
+          pointer-events: none;
+          cursor: default;
+          width: 25px;
+          height: 25px;
+          border-radius: 4px;
+          background-color: #ddd;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background-color .25s ease-in-out;
+          &.show {
+            cursor: pointer;
+            background-color: #6F3091;
+            pointer-events: auto;
+            &:hover {
+              img {
+                background-color: #6f3091;
+                transform: rotate(-40deg);
+              }
+            }
+            img {
+              animation: rotateBack 0.5s ease-out .25s;
+              transition: transform 0.25s ease-out;
+            }
+          }
+
+          img {
+            transform: rotate(-5deg);
+            transform-origin: center;
+            width: 15px;
+            height: 15px;
+          }
+        }
       }
+
       .box__list {
         height: calc(100vh - 155px);
         overflow-y: auto;
@@ -402,6 +474,7 @@ body {
           }
         }
         .box__list__item {
+          animation: fadeOut 1s ease-out;
           &[disabled="true"] {
             cursor: default;
           }
@@ -426,7 +499,7 @@ body {
           }
         }
         .box__list__item {
-          //transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out;
+          animation: fadeOut 1s ease-out;
 
           &:before {
             background-color: #00CB5D;
