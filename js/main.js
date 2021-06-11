@@ -1,11 +1,32 @@
 import services from '../services/index.js';
 import {declension} from '../utils/index.js';
 
+const saveFile = document.getElementById('btn-save-file');
+const newFile = document.getElementById('btn-new-fie');
+const fileNameNode = document.getElementById('file-name');
+let boardWrapper = null;
 let common = {};
 
-window.onload = () => showStructure();
+saveFile.addEventListener('click', () => {
+  const history = services.history.getUserHistory();
+  const listOfEditedOptions = history.map(optData => {
+    return optData.name;
+  });
+
+  console.log(listOfEditedOptions);
+});
+
+newFile.addEventListener('click', () => {
+  let isNewFile = confirm('Вы хотите отменить все изменения в текущем файле?')
+
+  if (isNewFile) onInit();
+});
+
+window.onload = () => onInit();
 
 function onInit() {
+  fileNameNode.innerHTML = '';
+
   common = {};
   common.allowTooltips = false;
   common.app = document.getElementById('app');
@@ -24,12 +45,18 @@ function onInit() {
     inputElement.addEventListener('change', handleFile, false);
     inputElement.click();
   });
+
+  if (boardWrapper) {
+    boardWrapper.removeEventListener('mousedown', services.modal.hideModal);
+  }
+
+  services.board.destroyLeaderLines();
 }
 
 function handleFile(e) {
-  const fileNameNode = document.getElementById('file-name');
   const file = e.target.files[0];
   let formData = new FormData();
+
   formData.append(file.name, file);
 
   if (file.type === 'text/plain') {
@@ -58,10 +85,10 @@ function handleFile(e) {
           localStorage.setItem('data', JSON.stringify(data))
         })
         .then(onInitResults);
-    }, 0);
+    }, 1000);
 
   } else {
-    console.log('!!!!error');
+    services.alert.alertShow('Формат файла не поддерживается.', 'danger');
   }
 }
 
@@ -69,17 +96,19 @@ function onInitResults() {
   common.app.innerHTML = '';
   common.app.className = '';
   common.app.classList.add('step__3');
+  common.app.scrollTo(0,0);
 
   const initialDocData = common.initialDocData;
 
   common.foundComponentsList = initialDocData.found_components.map(item => {
     const descriptionText = initialDocData.description[item.component_name];
     return {descriptionText, ...item};
-  })
+  });
+
   common.unfoundComponentsList = initialDocData.unfound_components.map(item => {
     const descriptionText = initialDocData.description[item.component_name];
     return {descriptionText, ...item};
-  })
+  });
 
   common.app.insertAdjacentHTML('afterbegin', `
     <div class="title">Результат проверки документа</div>
@@ -114,36 +143,12 @@ function onInitResults() {
   `);
 
   const showStructureBtn = document.getElementById('show-structure');
+
   showStructureBtn.addEventListener('click', showStructure);
 }
 
 async function showStructure() {
-  //temp
-  common = {};
-  common.allowTooltips = false;
-  common.app = document.getElementById('app');
-  let initialDocData = {};
-
-  await fetch('./data.json').then(res => res.json())
-    .then(data => {
-      initialDocData = data
-    })
-  common.initialDocData = initialDocData;
-  common.foundComponentsList = initialDocData.found_components.map(item => {
-    const descriptionText = initialDocData.description[item.component_name];
-    return {descriptionText, ...item};
-  })
-  common.unfoundComponentsList = initialDocData.unfound_components.map(item => {
-    const descriptionText = initialDocData.description[item.component_name];
-    return {descriptionText, ...item};
-  })
-
-  //temp
-
-
-  window.scrollTo(0, 0);
-
-  // const initialDocData = common.initialDocData;
+  const initialDocData = common.initialDocData;
 
   common.app.innerHTML = '';
   common.app.className = '';
@@ -195,6 +200,7 @@ async function showStructure() {
   const errorOptions = document.querySelectorAll('.box.error .box__list__item');
   const viewTrigger = document.getElementById('view-trigger');
   const undoBtn = document.querySelector('.box.error .box__undo');
+  boardWrapper = document.querySelector('#app.step__4');
 
   //оборачиваем все валидные текстовые объекты
   services.build.wrapValidTextComponents(validOptions, errorOptions, common.initialDocData.text);
@@ -207,9 +213,7 @@ async function showStructure() {
     }
   });
 
-  document.documentElement.addEventListener('mousedown', (e) => {
-      services.modal.hideModal(e);
-  });
+  boardWrapper.addEventListener('mousedown', services.modal.hideModal);
 
   viewTrigger.addEventListener('change', () => {
     common.allowTooltips = !common.allowTooltips;

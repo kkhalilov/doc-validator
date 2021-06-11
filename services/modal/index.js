@@ -1,3 +1,5 @@
+import services from '../index.js';
+
 let scrollTop = null;
 let modalNode = null;
 let selectedText = null;
@@ -30,19 +32,17 @@ export default class Modal {
         </div>
       </div>
     `);
-    const modal = document.querySelector('.modal');
     const modalSubmitBtn = document.querySelector('.modal__submit');
     const modalSelect = document.querySelector('.modal__select');
-
-    // modal.addEventListener('click', (e) => {
-    //   e.preventDefault()
-    // });
 
     modalSubmitBtn.addEventListener('click', (e) => {
       e.preventDefault();
       console.log('modalSelect.value', modalSelect.value);
       console.log('selectedText', selectedText);
+
       this.hideModal();
+
+      services.alert.alertShow('Данные отправлены!', 'success');
     });
   }
   showModal(e) {
@@ -68,12 +68,11 @@ export default class Modal {
     }, 1)
   }
 
-  hideModal(e) {
+  hideModal() {
     const docDataWrapper = document.querySelector('.doc__view .simplebar-content-wrapper');
-    const modal = document.getElementById('modal');
 
-    if (!e || !e.target.closest('#modal')) {
-      modal.classList.remove('show');
+    if (modalNode) {
+      modalNode.classList.remove('show');
       docDataWrapper.removeEventListener('scroll', this.updateModalPosition)
     }
   }

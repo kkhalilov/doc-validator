@@ -182,7 +182,6 @@ export default class Board {
   }
 
   setTooltips(allowTooltips) {
-    console.log('allowTooltips', allowTooltips)
     if (allowTooltips) {
       const listOfHighlightElements = document.querySelectorAll('.doc__view .highlight');
 
