@@ -1,51 +1,109 @@
-import {
-  parseComponentsList,
-  resetAttributes,
-  wrapValidTextComponents,
-  scrollToEl,
-  addLeaderLineToEl,
-  destroyLeaderLines,
-  declension,
-  revertAttributes,
-} from '../utils/index.js';
+import services from '../services/index.js';
+import {declension, contains} from '../utils/index.js';
 
-import {
-  updateHistory,
-  getUserHistory,
-  popHistoryData,
-} from '../utils/history.js'
-
+const saveFile = document.getElementById('btn-save-file');
+const resetData = document.getElementById('btn-new-fie');
+const fileNameNode = document.getElementById('file-name');
+let boardWrapper = null;
 let common = {};
+
+saveFile.addEventListener('click', () => {
+  // const history = services.history.getUserHistory();
+  // const listOfEditedOptions = history.map(optData => {
+  //   return optData.name;
+  // });
+  const text = document.querySelector('.doc__view .doc__data').textContent;
+  const formData = new URLSearchParams();
+
+  formData.append('text', text);
+  formData.append('filename', 'output.docx');
+
+  fetch('http://legaltech.viwo.ru/docx.jsp', {
+    method: 'POST',
+    body: formData,
+  })
+    .then(async response => {
+      const filename = 'output';
+      const extension = 'docx';
+
+      const resBlob = await response.blob();
+
+      const blob = new Blob([resBlob], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      });
+
+      const blobURL = window.URL.createObjectURL(blob);
+      const tempLink = document.createElement('a');
+
+      tempLink.style.display = 'none';
+      tempLink.href = blobURL;
+      tempLink.setAttribute('download', `${filename}.${extension}`);
+
+      if (typeof tempLink.download === 'undefined') {
+        tempLink.setAttribute('target', '_blank');
+      }
+
+      document.body.appendChild(tempLink);
+      tempLink.click();
+      document.body.removeChild(tempLink);
+
+      setTimeout(() => {
+        window.URL.revokeObjectURL(blobURL);
+      }, 100);
+    })
+    .catch(e => {
+      services.alert.alertShow('Что-то пошло не так, попробуйте еще раз.', 'danger');
+      console.error('Ошибка сохранения файла: ', e);
+    });
+});
+
+resetData.addEventListener('click', () => {
+  let resetDataConfirmation = confirm('Вы хотите отменить все изменения в текущем файле?');
+
+  if (resetDataConfirmation) onInit();
+});
 
 window.onload = () => onInit();
 
 function onInit() {
+  localStorage.clear();
+  saveFile.classList.add('d-none', 'disabled');
+  resetData.classList.add('d-none');
+  fileNameNode.innerHTML = '';
+
   common = {};
+  common.allowTooltips = false;
   common.app = document.getElementById('app');
   common.app.innerText = '';
   common.app.classList.add('step__1');
   common.app.insertAdjacentHTML('afterbegin', `
-    <button class="btn btn--primary mb-32" id="load-file-btn">Проверить документы</button>
-    <div class="subtitle">Мы поддерживаем документы в формете .txt</div>
-    <input style="display: none" type="file" name="loadFileInput" id="load-file-input">
+    <button class="btn btn--primary mb-32" id="uploadFileBtn">Проверить документ</button>
+    <div class="subtitle">Поддерживаются документы следующих форматов: doc, docx, rtf, pdf, txt, html.</div>
+    <input style="display: none" type="file" name="uploadedDocument" id="uploadedDocument">
   `);
 
-  const uploadDocBtn = document.getElementById('load-file-btn');
+  const uploadDocBtn = document.getElementById('uploadFileBtn');
 
   uploadDocBtn.addEventListener('click', () => {
-    const inputElement = document.getElementById('load-file-input');
+    const inputElement = document.getElementById('uploadedDocument');
     inputElement.addEventListener('change', handleFile, false);
-      inputElement.click();
+    inputElement.click();
   });
+
+  if (boardWrapper) {
+    boardWrapper.removeEventListener('mousedown', services.modal.hideModal);
+  }
+
+  services.board.destroyLeaderLines();
 }
 
 function handleFile(e) {
-  const fileNameNode = document.getElementById('file-name');
   const file = e.target.files[0];
-  let formData = new FormData();
-  formData.append(file.name, file);
+  const formData = new FormData();
 
-  if (file.type === 'text/plain') {
+  formData.append('uploadedDocument', file);
+
+  if (contains(file.name, ['.docx', '.doc', '.pdf', '.rtf', '.html', '.txt'])) {
     common.fileName = file.name;
     fileNameNode.textContent = common.fileName;
     common.app.classList.add('step__2');
@@ -55,44 +113,46 @@ function handleFile(e) {
       <div class="subtitle">Подождите документ обрабатывается</div>
     `);
 
-
-    // fetch('./data.json')
-    //   .then(response => response.json())
-    //   .then(data => {
-    //     common.initialDocData = data;
-    //     localStorage.setItem('data', JSON.stringify(data))
-    //   })
-    //   .then(onInitResults);
-    setTimeout(() => {
-      fetch('./data.json')
-        .then(response => response.json())
-        .then(data => {
-          common.initialDocData = data;
-          localStorage.setItem('data', JSON.stringify(data))
-        })
-        .then(onInitResults);
-    }, 0);
-
+    fetch('http://legaltech.viwo.ru/process.jsp', {
+      method: 'POST',
+      body: formData,
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+        common.initialDocData = data;
+        localStorage.setItem('data', JSON.stringify(data))
+      })
+      .then(onInitResults)
+      .catch(e => {
+        services.alert.alertShow('Что-то пошло не так, попробуйте еще раз.', 'danger');
+        onInit();
+        console.error('Ошибка загрузки файла: ', e);
+      });
   } else {
-    console.log('!!!!error');
+    services.alert.alertShow('Формат файла не поддерживается.', 'danger');
   }
 }
 
 function onInitResults() {
+  resetData.classList.remove('d-none');
+
   common.app.innerHTML = '';
   common.app.className = '';
   common.app.classList.add('step__3');
+  common.app.scrollTo(0,0);
 
   const initialDocData = common.initialDocData;
 
   common.foundComponentsList = initialDocData.found_components.map(item => {
     const descriptionText = initialDocData.description[item.component_name];
     return {descriptionText, ...item};
-  })
+  });
+
   common.unfoundComponentsList = initialDocData.unfound_components.map(item => {
     const descriptionText = initialDocData.description[item.component_name];
     return {descriptionText, ...item};
-  })
+  });
 
   common.app.insertAdjacentHTML('afterbegin', `
     <div class="title">Результат проверки документа</div>
@@ -103,15 +163,10 @@ function onInitResults() {
             <span class="amount">
               ${common.unfoundComponentsList.length}
             </span>
-            ${declension(common.unfoundComponentsList.length, [
-                'раздел отсутствует',
-                'раздела отсутствуют',
-                'разделов отсутствуют',
-              ])
-            }
+            ${declension(common.unfoundComponentsList.length, ['раздел отсутствует', 'раздела отсутствуют', 'разделов отсутствуют'])}
           </div>
           <div class="box__list">
-            ${parseComponentsList(common.unfoundComponentsList)}
+            ${services.build.parseComponentsList(common.unfoundComponentsList)}
           </div>
         </div>
         <div class="box">
@@ -119,15 +174,10 @@ function onInitResults() {
             <span class="amount">
               ${common.foundComponentsList.length}
             </span>
-            ${declension(common.foundComponentsList.length, [
-                'валидный раздел',
-                'валидных разделов',
-                'валидных разделов',
-              ])
-            }
+            ${declension(common.foundComponentsList.length, ['валидный раздел', 'валидных разделов', 'валидных разделов'])}
           </div>
           <div class="box__list">
-            ${parseComponentsList(common.foundComponentsList)}
+            ${services.build.parseComponentsList(common.foundComponentsList)}
           </div>
         </div>
       </div>
@@ -137,13 +187,14 @@ function onInitResults() {
   `);
 
   const showStructureBtn = document.getElementById('show-structure');
+
   showStructureBtn.addEventListener('click', showStructure);
 }
 
-function showStructure() {
-  window.scrollTo(0, 0);
-
+async function showStructure() {
   const initialDocData = common.initialDocData;
+
+  saveFile.classList.remove('d-none');
 
   common.app.innerHTML = '';
   common.app.className = '';
@@ -152,37 +203,28 @@ function showStructure() {
       <div class="result-container">
         <div class="box error">
           <div class="box__header">
-            <div class="box__title">
-              <span class="amount" id="error-options-amount">
+            <div class="box__title" data-amount="${common.unfoundComponentsList.length}">
+              <span class="amount">
                  ${common.unfoundComponentsList.length}
               </span> 
-              ${declension(common.unfoundComponentsList.length, [
-                  'Отсутсвует',
-                  'Отсутсвуют',
-                  'Отсутсвуют',
-                ])
-              }
+              ${declension(common.unfoundComponentsList.length, ['Отсутсвует', 'Отсутсвуют', 'Отсутсвуют'])}
+            </div>
+            <div class="box__undo">
+              <img src="../images/icon-undo.svg" alt="undo">
             </div>   
           </div>
           <div class="box__list" data-simplebar data-simplebar-auto-hide="false">
-            ${parseComponentsList(common.unfoundComponentsList)}
+            ${services.build.parseComponentsList(common.unfoundComponentsList)}
           </div>
         </div>
         <div class="doc__view" data-simplebar data-simplebar-auto-hide="false">
-          <div class="doc__data" id="doc-data">${initialDocData.text} <div id="cal1">&nbsp;</div>
-          <div id="cal2">&nbsp;</div></div>
-        
+          <div class="doc__data" id="doc-data">${initialDocData.text}</div>
         </div>
         <div class="box valid">
           <div class="box__header">
-            <div class="box__title">
+            <div class="box__title" data-amount="${common.foundComponentsList.length}">
               <span class="amount">${common.foundComponentsList.length}</span>
-              ${declension(common.foundComponentsList.length, [
-                  'Присутствует',
-                  'Присутствуют',
-                  'Присутствуют',
-                ])
-              }
+              ${declension(common.foundComponentsList.length, ['Присутствует', 'Присутствуют', 'Присутствуют'])}
             </div>
             <div class="">
               <div class="slider-checkbox">
@@ -192,7 +234,7 @@ function showStructure() {
             </div>
           </div>
           <div class="box__list" data-simplebar data-simplebar-auto-hide="false" id="box-valid">
-            ${parseComponentsList(common.foundComponentsList)}
+            ${services.build.parseComponentsList(common.foundComponentsList)}
           </div>
         </div>
       </div>
@@ -200,229 +242,131 @@ function showStructure() {
 
   const docView = document.querySelector('.doc__view');
   const docData = document.getElementById('doc-data');
-  const validOptionsContainer = document.querySelector('.box.valid');
   const validOptions = document.querySelectorAll('.box.valid .box__list__item');
-  const errorOptionsContainer = document.querySelector('.box.error');
   const errorOptions = document.querySelectorAll('.box.error .box__list__item');
   const viewTrigger = document.getElementById('view-trigger');
-  const errorOptionsAmount = document.querySelector('.box.error .amount');
-  const validOptionsAmount = document.querySelector('.box.valid .amount');
-
-  const modal = document.getElementById('modal');
-  const modalInput = document.getElementById('name-of-component');
+  const undoBtn = document.querySelector('.box.error .box__undo');
+  boardWrapper = document.querySelector('#app.step__4');
 
   //оборачиваем все валидные текстовые объекты
-  wrapValidTextComponents(validOptions, errorOptions, common.initialDocData.text);
-  common.wrappedData = docData.innerHTML;
+  services.build.wrapValidTextComponents(validOptions, errorOptions, common.initialDocData.text);
+  services.modal.createModal(common.initialDocData.description);
 
   //гетим выделенный фрагмент текста
-  // docData.addEventListener('mouseup', e => {
-  //   setTimeout(() => {
-  //     if (window.getSelection().toString().length) {
-  //       let scrollTop = document.documentElement.scrollTop;
-  //       modal.style.display = 'flex';
-  //       modal.style.left = `${e.clientX}px`;
-  //       modal.style.top = `${e.clientY + scrollTop}px`;
-  //       let exactText = window.getSelection().toString();
-  //       console.log('!!!!text', exactText);
-  //
-  //     }
-  //   }, 10);
-  // });
-  // document.documentElement.addEventListener('mousedown', (e) => {
-  //   if (e.target.closest('#modal')) {
-  //     return;
-  //   }
-  //
-  //   modal.style.display = 'none';
-  // });
-
-  const ele = document.getElementById('modal');
-  const sel = window.getSelection();
-  const rel1= document.createRange();
-  rel1.selectNode(document.getElementById('cal1'));
-  const rel2= document.createRange();
-  rel2.selectNode(document.getElementById('cal2'));
-  document.querySelector('.doc__view').addEventListener('mouseup', function () {
-    if (!sel.isCollapsed) {
-      console.log('selected text', sel)
-      const r = sel.getRangeAt(0).getBoundingClientRect();
-      const rb1 = rel1.getBoundingClientRect();
-      const rb2 = rel2.getBoundingClientRect();
-      ele.style.top = (r.bottom - rb2.top)*100/(rb1.top-rb2.top) + 'px'; //this will place ele below the selection
-      ele.style.left = (r.left - rb2.left)*100/(rb1.left-rb2.left) + 'px'; //this will align the right edges together
-
-      //code to set content
-
-      ele.style.display = 'block';
+  docData.addEventListener('mouseup', e => {
+    if (e.target.closest('.doc__view')) {
+      services.modal.showModal(e)
     }
   });
 
+  boardWrapper.addEventListener('mousedown', services.modal.hideModal);
+
   viewTrigger.addEventListener('change', () => {
-    console.log('click');
+    common.allowTooltips = !common.allowTooltips;
     docView.classList.toggle('highlighted');
 
+    services.board.setTooltips(common.allowTooltips);
   });
 
-  document.onkeydown = () => {
-    let evtobj = window.event ? event : e
+  undoBtn.addEventListener('click', () => {
+      const historyData = services.history.getUserHistory();
 
-    if (evtobj.keyCode === 90 && evtobj.ctrlKey) {
-      const historyData = getUserHistory();
-      console.log(historyData)
       if (historyData.length) {
-        // common.wrappedData = historyData[historyData.length - 1].wrappedData;
-        // docData.innerHTML = historyData[historyData.length - 1].wrappedData;
-
-        destroyLeaderLines();
-        const btnAddContent = document.querySelector('#btn-paste-content');
-        if (btnAddContent) btnAddContent.remove();
-        [...validOptions, ...errorOptions].forEach(item => {
-          item.classList.remove('active');
-        });
-
+        services.board.updateOptionsTitles(false, common.unfoundComponentsList.length);
+        services.board.clearBoard();
 
         //переносим елемент
-        const errorOptionsContainerList = document.querySelector('.box.error .simplebar-content')
-          ? document.querySelector('.box.error .simplebar-content')
-          : document.querySelector('.box.error .box__list');
+        const errorOptionsContainerList = document.querySelector('.box.error .simplebar-content');
         const removedElData = historyData[historyData.length - 1];
+        const revertedTextContent = document.querySelector(`.doc__view .highlight[name='#${removedElData.name}#']`);
 
         //удаляем ревертнутый текст из дома
-        document.querySelector(`.doc__view .highlight[name="${removedElData.name}"]`).remove();
+        revertedTextContent.remove();
 
-        revertAttributes(removedElData.startIndex, removedElData.lengthOfData);
+        services.board.revertAttributes(removedElData.startIndex, removedElData.lengthOfData);
+        services.history.popHistoryData();
 
         removedElData.hideOption.removeEventListener('click', validFunc)
         removedElData.hideOption.addEventListener('click', errorFunc)
         errorOptionsContainerList.insertBefore(removedElData.hideOption, errorOptionsContainerList.firstChild);
-
-        popHistoryData();
-
-        errorOptionsAmount.textContent = +errorOptionsAmount.textContent + 1;
-        validOptionsAmount.textContent = +validOptionsAmount.textContent - 1;
-
       }
-    }
-  };
+  });
 
-  validOptions.forEach(function(validOption, idx) {
+  validOptions.forEach(function (validOption) {
     validOption.addEventListener('click', validFunc);
   });
 
-  errorOptions.forEach(function(errorOption) {
+  errorOptions.forEach(function (errorOption) {
     errorOption.addEventListener('click', errorFunc);
   });
 }
 
 function validFunc() {
-  destroyLeaderLines();
-  const btnAddContent = document.querySelector('#btn-paste-content');
-  if (btnAddContent) btnAddContent.remove();
-
-  const errorOptions = document.querySelectorAll('.box.error .box__list__item');
-  const validOptions = document.querySelectorAll('.box.valid .box__list__item');
   const docView = document.querySelector('.doc__view');
-  const docData = document.getElementById('doc-data')
   const componentName = this.getAttribute('name');
 
-  //очищаем от кнопки вставить в случае если она есть
-  // docData.innerHTML = common.wrappedData;
-
-
-  [...validOptions, ...errorOptions].forEach(item => {
-    item.classList.remove('active');
-  });
+  services.board.clearBoard();
 
   this.classList.add('active');
 
   //скролим к нужному элементу
-  scrollToEl(
+  services.board.scrollToEl(
     docView,
-    docView.querySelector(`.highlight[name="${componentName}"]`),
+    docView.querySelector(`.highlight[name*='#${componentName}#']`),
     20
   );
 
-  addLeaderLineToEl(this, componentName, false);
+  services.board.addLeaderLineToEl(this, componentName, false);
 }
 
 function errorFunc() {
-  destroyLeaderLines();
-  const btnAddContent = document.querySelector('#btn-paste-content');
-  if (btnAddContent) btnAddContent.remove();
   const initialDocData = common.initialDocData;
-  const errorOptionsAmount = document.querySelector('.box.error .amount');
-  const validOptionsAmount = document.querySelector('.box.valid .amount');
   const docData = document.getElementById('doc-data')
   const docView = document.querySelector('.doc__view');
-  const errorOptions = document.querySelectorAll('.box.error .box__list__item');
-  const validOptions = document.querySelectorAll('.box.valid .box__list__item');
-
-  //сетим глобально обернутые куски текста
-  let docDataWrapped = docData.innerHTML;
   const setContentIndex = +this.getAttribute('set-content-index');
   const name = this.getAttribute('name');
 
-  if (this.getAttribute('disabled')) return;
-
-  [...validOptions, ...errorOptions].forEach(item => {
-    item.classList.remove('active');
-  });
+  services.board.clearBoard();
+  services.board.setTooltips(common.allowTooltips);
 
   this.classList.add('active');
 
-  console.log('setContentIndex', setContentIndex);
   docData.innerHTML =
     docData.innerHTML.substring(0, setContentIndex) +
-    '<div id="btn-paste-content" class="btn-paste-content">' +
-      '<div class="inner">Вставить</div>' +
-    '</div>' +
+      '<div id="btn-paste-content" class="btn-paste-content">' +
+        '<div class="inner">Вставить</div>' +
+      '</div>' +
     docData.innerHTML.substring(setContentIndex, docData.innerHTML.length);
-
-
 
   const btnPasteMissingOption = document.querySelector('#btn-paste-content');
 
-  //чтобы скролить к контенту в случае с overflow scroll
-  scrollToEl(docView, btnPasteMissingOption, 90);
-
-  addLeaderLineToEl(this, '', true);
+  services.board.scrollToEl(docView, btnPasteMissingOption, 90);
+  services.board.addLeaderLineToEl(this, '', true);
 
   btnPasteMissingOption.addEventListener('click', () => {
+    const validOptionsContainerList = document.querySelector('.box.valid .simplebar-content');
     const componentName = this.getAttribute('name');
     const index = +this.getAttribute('set-content-index');
-    const pasteData = initialDocData.unfound_components
-      .find((component) => component.component_name === componentName);
+    const pasteData = initialDocData.unfound_components.find((component) => {
+      return component.component_name === componentName;
+    });
+    const pastedDataContent = `<div name="#${name}#" class="highlight">${pasteData.text}</div>`;
 
-    this.classList.remove('active');
-
-    errorOptionsAmount.textContent = +errorOptionsAmount.textContent - 1;
-    validOptionsAmount.textContent = +validOptionsAmount.textContent + 1;
-
-    destroyLeaderLines();
-    const btnAddContent = document.querySelector('#btn-paste-content');
-    if (btnAddContent) btnAddContent.remove();
+    services.board.updateOptionsTitles(true, common.unfoundComponentsList.length);
+    services.board.clearBoard();
 
     docData.innerHTML =
       docData.innerHTML.substring(0, setContentIndex) +
-      `<div name="${name}" class="highlight">${pasteData.text}</div>` +
+        pastedDataContent +
       docData.innerHTML.substring(setContentIndex, docData.innerHTML.length);
 
-    //переносим елемент
-    const validOptionsContainerList = document.querySelector('.box.valid .simplebar-content')
-      ? document.querySelector('.box.valid .simplebar-content')
-      : document.querySelector('.box.valid .box__list');
-    // const removedElNode = document.querySelector(`.box.error .box__list__item[name="${name}"]`);
-    // const removedElNodeClone = this.cloneNode(true);
-
-    // removedElNode.style.display = 'block';
-    console.log('this',this)
     this.removeEventListener('click', errorFunc);
-    this.addEventListener('click', validFunc );
+    this.addEventListener('click', validFunc);
+
     validOptionsContainerList.insertBefore(this, validOptionsContainerList.firstChild);
 
-    updateHistory(this, `<div name="${name}" class="highlight">${pasteData.text}</div>`.length, index, name);
-    resetAttributes(index, `<div name="${name}" class="highlight">${pasteData.text}</div>`.length);
-
+    services.history.updateHistory(this, pastedDataContent.length, index, name);
+    services.board.updateAttributes(index, pastedDataContent.length);
+    services.board.setTooltips(common.allowTooltips);
   });
 }
