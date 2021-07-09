@@ -59,7 +59,7 @@
 .btn.disabled {
   cursor: default;
   pointer-events: none;
-  opacity: 0.6;
+  opacity: 0.7;
 }
 .btn--primary {
   padding: 16px 32px;
