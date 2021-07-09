@@ -57,7 +57,7 @@ body {
   }
 }
 
-@keyframes fadeOut {
+@keyframes fadeIn {
   0% {
     opacity: 0;
   }
@@ -198,7 +198,7 @@ body {
   position: relative;
   background: #d2d2d2;
   border-radius: 10px;
-  transition: background 0.2s ease;
+  //transition: background 0.2s ease;
   cursor: pointer;
 }
 
@@ -213,7 +213,7 @@ body {
   position: absolute;
   left: 0;
   top: 0;
-  transition: transform 0.2s ease-in-out;
+  //transition: transform 0.2s ease-in-out;
 }
 
 .slider-checkbox [type="checkbox"]:checked + label {
@@ -420,7 +420,7 @@ body {
       border-radius: 4px;
       .highlight {
         background-color: transparent;
-        transition: background-color 0.2s ease-in-out;
+        //transition: background-color 0.2s ease-in-out;
 
         &.active {
           background-color: #5cde98;
@@ -441,6 +441,7 @@ body {
         white-space: pre-line;
       }
     }
+
     .box {
       overflow: hidden;
       width: 100%;
@@ -518,7 +519,7 @@ body {
           }
         }
         .box__list__item {
-          animation: fadeOut 1s ease-out;
+          animation: fadeIn 1s ease-out;
           &[disabled="true"] {
             cursor: default;
           }
@@ -543,7 +544,7 @@ body {
           }
         }
         .box__list__item {
-          animation: fadeOut 1s ease-out;
+          animation: fadeIn 1s ease-out;
 
           &:before {
             background-color: #00CB5D;

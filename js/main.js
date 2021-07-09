@@ -1,30 +1,74 @@
 import services from '../services/index.js';
-import {declension} from '../utils/index.js';
+import {declension, contains} from '../utils/index.js';
 
 const saveFile = document.getElementById('btn-save-file');
-const newFile = document.getElementById('btn-new-fie');
+const resetData = document.getElementById('btn-new-fie');
 const fileNameNode = document.getElementById('file-name');
 let boardWrapper = null;
 let common = {};
 
 saveFile.addEventListener('click', () => {
-  const history = services.history.getUserHistory();
-  const listOfEditedOptions = history.map(optData => {
-    return optData.name;
-  });
+  // const history = services.history.getUserHistory();
+  // const listOfEditedOptions = history.map(optData => {
+  //   return optData.name;
+  // });
+  const text = document.querySelector('.doc__view .doc__data').textContent;
+  const formData = new URLSearchParams();
 
-  console.log(listOfEditedOptions);
+  formData.append('text', text);
+  formData.append('filename', 'output.docx');
+
+  fetch('http://legaltech.viwo.ru/docx.jsp', {
+    method: 'POST',
+    body: formData,
+  })
+    .then(async response => {
+      const filename = 'output';
+      const extension = 'docx';
+
+      const resBlob = await response.blob();
+
+      const blob = new Blob([resBlob], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      });
+
+      const blobURL = window.URL.createObjectURL(blob);
+      const tempLink = document.createElement('a');
+
+      tempLink.style.display = 'none';
+      tempLink.href = blobURL;
+      tempLink.setAttribute('download', `${filename}.${extension}`);
+
+      if (typeof tempLink.download === 'undefined') {
+        tempLink.setAttribute('target', '_blank');
+      }
+
+      document.body.appendChild(tempLink);
+      tempLink.click();
+      document.body.removeChild(tempLink);
+
+      setTimeout(() => {
+        window.URL.revokeObjectURL(blobURL);
+      }, 100);
+    })
+    .catch(e => {
+      services.alert.alertShow('Что-то пошло не так, попробуйте еще раз.', 'danger');
+      console.error('Ошибка сохранения файла: ', e);
+    });
 });
 
-newFile.addEventListener('click', () => {
-  let isNewFile = confirm('Вы хотите отменить все изменения в текущем файле?')
+resetData.addEventListener('click', () => {
+  let resetDataConfirmation = confirm('Вы хотите отменить все изменения в текущем файле?');
 
-  if (isNewFile) onInit();
+  if (resetDataConfirmation) onInit();
 });
 
 window.onload = () => onInit();
 
 function onInit() {
+  localStorage.clear();
+  saveFile.classList.add('d-none', 'disabled');
+  resetData.classList.add('d-none');
   fileNameNode.innerHTML = '';
 
   common = {};
@@ -33,15 +77,15 @@ function onInit() {
   common.app.innerText = '';
   common.app.classList.add('step__1');
   common.app.insertAdjacentHTML('afterbegin', `
-    <button class="btn btn--primary mb-32" id="load-file-btn">Проверить документы</button>
-    <div class="subtitle">Мы поддерживаем документы в формете .txt</div>
-    <input style="display: none" type="file" name="loadFileInput" id="load-file-input">
+    <button class="btn btn--primary mb-32" id="uploadFileBtn">Проверить документ</button>
+    <div class="subtitle">Поддерживаются документы следующих форматов: doc, docx, rtf, pdf, txt, html.</div>
+    <input style="display: none" type="file" name="uploadedDocument" id="uploadedDocument">
   `);
 
-  const uploadDocBtn = document.getElementById('load-file-btn');
+  const uploadDocBtn = document.getElementById('uploadFileBtn');
 
   uploadDocBtn.addEventListener('click', () => {
-    const inputElement = document.getElementById('load-file-input');
+    const inputElement = document.getElementById('uploadedDocument');
     inputElement.addEventListener('change', handleFile, false);
     inputElement.click();
   });
@@ -55,11 +99,11 @@ function onInit() {
 
 function handleFile(e) {
   const file = e.target.files[0];
-  let formData = new FormData();
+  const formData = new FormData();
 
-  formData.append(file.name, file);
+  formData.append('uploadedDocument', file);
 
-  if (file.type === 'text/plain') {
+  if (contains(file.name, ['.docx', '.doc', '.pdf', '.rtf', '.html', '.txt'])) {
     common.fileName = file.name;
     fileNameNode.textContent = common.fileName;
     common.app.classList.add('step__2');
@@ -69,30 +113,30 @@ function handleFile(e) {
       <div class="subtitle">Подождите документ обрабатывается</div>
     `);
 
-
-    // fetch('./data.json')
-    //   .then(response => response.json())
-    //   .then(data => {
-    //     common.initialDocData = data;
-    //     localStorage.setItem('data', JSON.stringify(data))
-    //   })
-    //   .then(onInitResults);
-    setTimeout(() => {
-      fetch('./data.json')
-        .then(response => response.json())
-        .then(data => {
-          common.initialDocData = data;
-          localStorage.setItem('data', JSON.stringify(data))
-        })
-        .then(onInitResults);
-    }, 1000);
-
+    fetch('http://legaltech.viwo.ru/process.jsp', {
+      method: 'POST',
+      body: formData,
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+        common.initialDocData = data;
+        localStorage.setItem('data', JSON.stringify(data))
+      })
+      .then(onInitResults)
+      .catch(e => {
+        services.alert.alertShow('Что-то пошло не так, попробуйте еще раз.', 'danger');
+        onInit();
+        console.error('Ошибка загрузки файла: ', e);
+      });
   } else {
     services.alert.alertShow('Формат файла не поддерживается.', 'danger');
   }
 }
 
 function onInitResults() {
+  resetData.classList.remove('d-none');
+
   common.app.innerHTML = '';
   common.app.className = '';
   common.app.classList.add('step__3');
@@ -149,6 +193,8 @@ function onInitResults() {
 
 async function showStructure() {
   const initialDocData = common.initialDocData;
+
+  saveFile.classList.remove('d-none');
 
   common.app.innerHTML = '';
   common.app.className = '';
@@ -232,7 +278,7 @@ async function showStructure() {
         //переносим елемент
         const errorOptionsContainerList = document.querySelector('.box.error .simplebar-content');
         const removedElData = historyData[historyData.length - 1];
-        const revertedTextContent = document.querySelector(`.doc__view .highlight[name="${removedElData.name}"]`);
+        const revertedTextContent = document.querySelector(`.doc__view .highlight[name='#${removedElData.name}#']`);
 
         //удаляем ревертнутый текст из дома
         revertedTextContent.remove();
@@ -266,7 +312,7 @@ function validFunc() {
   //скролим к нужному элементу
   services.board.scrollToEl(
     docView,
-    docView.querySelector(`.highlight[name="${componentName}"]`),
+    docView.querySelector(`.highlight[name*='#${componentName}#']`),
     20
   );
 
@@ -301,9 +347,10 @@ function errorFunc() {
     const validOptionsContainerList = document.querySelector('.box.valid .simplebar-content');
     const componentName = this.getAttribute('name');
     const index = +this.getAttribute('set-content-index');
-    const pasteData = initialDocData.unfound_components
-      .find((component) => component.component_name === componentName);
-    const pastedDataContent = `<div name="${name}" class="highlight">${pasteData.text}</div>`;
+    const pasteData = initialDocData.unfound_components.find((component) => {
+      return component.component_name === componentName;
+    });
+    const pastedDataContent = `<div name="#${name}#" class="highlight">${pasteData.text}</div>`;
 
     services.board.updateOptionsTitles(true, common.unfoundComponentsList.length);
     services.board.clearBoard();

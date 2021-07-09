@@ -24,7 +24,6 @@ export default class Build {
 
     [...validOptions].forEach(validOption => {
       const componentName = validOption.getAttribute('name');
-      const componentDescription = validOption.getAttribute('description');
       const highlightIndices = validOption.getAttribute('highlight-indices').split(',');
 
       highlightIndices.forEach((indices, idx) => {
@@ -35,10 +34,24 @@ export default class Build {
           start: startIndex,
           length: stopIndex - startIndex,
           name: componentName,
-          description: componentDescription,
-        })
+        });
       });
     });
+
+    //костыль для компонентов с одинковыми индексами
+    validData = validData.reduce((acc, validEl) => {
+      const groupEl = acc.find((el, idx) => {
+        return el.start === validEl.start;
+      });
+
+      if (groupEl) {
+        groupEl.name += `#${validEl.name}`
+      } else {
+        acc.push(validEl);
+      }
+
+      return acc;
+    }, []);
 
     [...errorOptions].forEach(errorItem => {
       const componentName = errorItem.getAttribute('name');
@@ -56,7 +69,7 @@ export default class Build {
       element: 'span',
       className: 'highlight',
       each: function (node, data) {
-        node.setAttribute('name', data.name);
+        node.setAttribute('name', `#${data.name}#`);
         errorData.forEach(errorItem => {
           if (data.start < errorItem.start) {
             const errorItemCurrent = document.querySelector(`.box.error .box__list__item[name="${errorItem.name}"]`);

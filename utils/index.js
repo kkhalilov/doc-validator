@@ -10,3 +10,14 @@ export function declension(num, titles) {
   return `${declination}`;
 }
 
+export function contains(target, pattern) {
+  let flag = false;
+
+  for (let i = 0; i < pattern.length; i++ ) {
+    flag = target.includes(pattern[i]);
+    if (flag) break;
+  }
+
+  return flag;
+}
+

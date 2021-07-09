@@ -20,7 +20,7 @@ export default class Board {
     };
 
     if (!isError) {
-      const validOptions = [...document.querySelectorAll(`#doc-data .highlight[name="${name}"]`)];
+      const validOptions = [...document.querySelectorAll(`#doc-data .highlight[name*='#${name}#']`)];
       validOptions.forEach((docElement, idx) => {
         docElement.classList.add('active');
 
@@ -144,6 +144,7 @@ export default class Board {
     const undoBtn = document.querySelector('.box.error .box__undo');
     const errorTitle = document.querySelector('.box.error .box__title');
     const validTitle = document.querySelector('.box.valid .box__title');
+    const saveFile = document.getElementById('btn-save-file');
 
     let errListLength = Number(errorTitle.dataset.amount);
     let validListLength = Number(validTitle.dataset.amount);
@@ -157,8 +158,10 @@ export default class Board {
     }
 
     if (errListLength !== initialLength) {
+      saveFile.classList.remove('disabled');
       undoBtn.classList.add('show');
     } else {
+      saveFile.classList.add('disabled');
       undoBtn.classList.remove('show');
     }
     errorTitle.setAttribute('data-amount', errListLength.toString());
@@ -186,10 +189,19 @@ export default class Board {
       const listOfHighlightElements = document.querySelectorAll('.doc__view .highlight');
 
       [...listOfHighlightElements].forEach(el => {
-        const elName = el.getAttribute('name');
-        const description = document.querySelector(`.box.valid .box__list__item[name="${elName}"]`).getAttribute('description');
+        let elName = el.getAttribute('name');
+        elName = elName.replace(/#/g, '');
+
+        let description = document.querySelector(`.box.valid .box__list__item[name="${elName}"]`);
+
+        if (description) {
+          description = description.getAttribute('description').replace(/-/g, ' ')
+        } else {
+          description = 'Сложный компонент. Непонятно, что с ним делать.'
+        }
+
         tippy(el, {
-          content: description.replace(/-/g, ' '),
+          content: description,
           delay: 250,
           onShow() {
             return !!document.querySelector('.doc__view.highlighted');
